@@ -16,15 +16,15 @@ graph TD
     %% ===== Livello 1: Load Balancer =====
     LB[Load Balancer / Reverse Proxy]
 
-    %% ===== Livello 2: Servizi =====
-    subgraph Services_Cluster
+    %% ===== Livello 2: Servizi affiancati =====
+    WS[WebServer]
+    SPAWN[SpawnService]
+
+    %% ===== Livello 2: Game Cluster =====
+    subgraph GAME_CLUSTER[GameServiceCluster]
         direction TB
-        WS[WebServer]
-        SPAWN[SpawnService]
-        subgraph GAME_CLUSTER[GameServiceCluster]
-            NODE1[GameNode1]
-            NODE2[GameNode2]
-        end
+        NODE1[GameNode1]
+        NODE2[GameNode2]
     end
 
     %% ===== Livello 3: Database =====
@@ -37,5 +37,6 @@ graph TD
     SPAWN --> NODE2
     WS --> SQL
 ```
+
 
 
