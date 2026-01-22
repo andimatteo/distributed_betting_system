@@ -14,29 +14,21 @@ diagram of the design
 ```mermaid
 graph TD
     %% ===== Livello 1: Load Balancer =====
-    LB[Load Balancer / Reverse Proxy] 
-    style LB fill:#f9f,stroke:#333,stroke-width:2px
+    LB[Load Balancer / Reverse Proxy]
 
     %% ===== Livello 2: Servizi =====
-    subgraph Services Cluster
+    subgraph Services_Cluster
         direction TB
-        WS[Web Server (Stateless)]
-        SPAWN[Spawn Service / Main Erlang Process]
-        subgraph GAME_CLUSTER[Game Service Cluster (Erlang + Mnesia)]
-            NODE1[Game Node 1]
-            NODE2[Game Node 2]
+        WS[WebServer]
+        SPAWN[SpawnService]
+        subgraph GAME_CLUSTER[GameServiceCluster]
+            NODE1[GameNode1]
+            NODE2[GameNode2]
         end
     end
 
-    style WS fill:#bbf,stroke:#333
-    style SPAWN fill:#bfb,stroke:#333
-    style GAME_CLUSTER fill:#dfd,stroke:#333,stroke-dasharray: 5 5
-    style NODE1 fill:#dfd,stroke:#333
-    style NODE2 fill:#dfd,stroke:#333
-
     %% ===== Livello 3: Database =====
-    SQL[(MySQL Database)]
-    style SQL fill:#bbf,stroke:#333
+    SQL[MySQL]
 
     %% ===== Collegamenti =====
     LB -->|HTTP/REST| WS
@@ -45,6 +37,5 @@ graph TD
     SPAWN --> NODE2
     WS --> SQL
 ```
-
 
 
