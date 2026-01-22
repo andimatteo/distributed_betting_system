@@ -10,52 +10,41 @@
 
 diagram of the design
 
+
 ```mermaid
 graph TD
-Client((Client Esterno)) --> LB
+    %% ===== Livello 1: Load Balancer =====
+    LB[Load Balancer / Reverse Proxy] 
+    style LB fill:#f9f,stroke:#333,stroke-width:2px
 
-subgraph "Entry Point"
-LB[Load Balancer / Rev. Proxy]
-style LB fill:#f9f,stroke:#333,stroke-width:2px
-subgraph "IP: 10.2.1.11"
-end
-end
+    %% ===== Livello 2: Servizi =====
+    subgraph Services Cluster
+        direction TB
+        WS[Web Server (Stateless)]
+        SPAWN[Spawn Service / Main Erlang Process]
+        subgraph GAME_CLUSTER[Game Service Cluster (Erlang + Mnesia)]
+            NODE1[Game Node 1]
+            NODE2[Game Node 2]
+        end
+    end
 
-LB -->|HTTP/REST| WEB
-LB -->|Game Traffic| E_CLUSTER
+    style WS fill:#bbf,stroke:#333
+    style SPAWN fill:#bfb,stroke:#333
+    style GAME_CLUSTER fill:#dfd,stroke:#333,stroke-dasharray: 5 5
+    style NODE1 fill:#dfd,stroke:#333
+    style NODE2 fill:#dfd,stroke:#333
 
-subgraph "Web Stack"
-WEB[Web Server]
-SQL[(MySQL Database)]
+    %% ===== Livello 3: Database =====
+    SQL[(MySQL Database)]
+    style SQL fill:#bbf,stroke:#333
 
-WEB -.->|Auth JWT + App| Client
-WEB -->|Query| SQL
-
-style WEB fill:#bbf,stroke:#333
-style SQL fill:#bbf,stroke:#333
-end
-
-subgraph "Erlang Cluster"
-direction TB
-SPAWN[Main Process / Spawn Service]
-NODE1[Game Node 1]
-NODE2[Game Node 2]
-
-SPAWN -.->|Spawns| NODE1
-SPAWN -.->|Spawns| NODE2
-
-style SPAWN fill:#bfb,stroke:#333
-style NODE1 fill:#dfd,stroke:#333
-style NODE2 fill:#dfd,stroke:#333
-end
-
-%% Mapping IPs explicitly in the diagram for clarity
-click LB "10.2.1.11"
-click WEB "10.2.1.12"
-click SQL "10.2.1.27"
-click SPAWN "10.2.1.28"
+    %% ===== Collegamenti =====
+    LB -->|HTTP/REST| WS
+    LB -->|Game Traffic| SPAWN
+    SPAWN --> NODE1
+    SPAWN --> NODE2
+    WS --> SQL
 ```
-
 
 
 
