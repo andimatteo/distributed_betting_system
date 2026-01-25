@@ -27,6 +27,7 @@ public class JwtService {
     public String generateToken(long id, boolean isAdmin) {
         Instant now = Instant.now();
         Instant expiry = now.plusSeconds(expirationSeconds);
+        // TODO: see if put expiration manually or not
         return Jwts.builder()
                 .claims(Map.of(
                         "id", id,
