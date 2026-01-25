@@ -11,10 +11,10 @@
 - [] Train: Frontend
 - [] Train: WebSocket
 - [] Spring
-  - [] Tren: MySQL
-  - [] Tren: Maven
-  - [] API per login/registrazione
-    - [] Token JWT condivisi con Erlang
+  - [x] Tren: MySQL
+  - [x] Tren: Maven
+  - [x] API per login/registrazione
+    - [x] Token JWT condivisi con Erlang
     - [] Protocollo di sicurezza e validazione JWT
 
 ## API endpoints
