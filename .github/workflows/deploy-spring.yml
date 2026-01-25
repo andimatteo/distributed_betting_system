@@ -1,0 +1,21 @@
+name: Deploy Spring
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - spring/**
+      - deploy/**
+      - .github/workflows/deploy-spring.yml
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy
+        env:
+          ROOT_PASSWORD: ${{ secrets.ROOT_PASSWORD }}
+        run: |
+          bash deploy/deploy_spring.sh
+
