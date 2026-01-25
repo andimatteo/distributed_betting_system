@@ -6,16 +6,16 @@
     - [] come spawnano i processi?
     - [] Come funziona MnesiaDB?
   - [] Train: Parte admin
-- [] Tren: Nginx load balancer
-  - [] proxy globale per i client
+- [x] Tren: Nginx load balancer
+  - [] proxy globale per i client (todo after erlang implementation)
 - [] Train: Frontend
 - [] Train: WebSocket
 - [] Spring
   - [x] Tren: MySQL
   - [x] Tren: Maven
   - [x] API per login/registrazione
-    - [x] Token JWT condivisi con Erlang
-    - [] Protocollo di sicurezza e validazione JWT
+    - [x] Token JWT condivisi con Erlang (to see further with erlang implementation)
+    - [] Protocollo di sicurezza e validazione JWT (todo after erlang implementation)
 
 ## API endpoints
 - API login/registrazione/logout (user e admin)
