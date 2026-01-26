@@ -1,6 +1,14 @@
 // State management
 let currentFilter = 'all';
 
+// WebSocket message handler
+registerWSMessageHandler((data) => {
+    // Handle odds updates, new bets, etc.
+    if (data.type === 'odds_update' || data.type === 'bet_update') {
+        loadBets(); // Reload bets when updates arrive
+    }
+});
+
 // Check authentication
 document.addEventListener('DOMContentLoaded', () => {
     const currentUser = localStorage.getItem('currentUser');
@@ -14,6 +22,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (user.isAdmin) {
         document.getElementById('admin-link').style.display = 'inline';
     }
+    
+    // Connect WebSocket
+    connectWebSocket();
     
     loadBets();
 });

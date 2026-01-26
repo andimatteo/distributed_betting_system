@@ -7,6 +7,32 @@ let wheelAngle = 0;
 let wheelSpinning = false;
 let wheelAnimationId = null;
 
+// WebSocket message handler
+registerWSMessageHandler((data) => {
+    // Handle real-time odds updates for current bet
+    if (data.type === 'odds_update' && currentBet && data.betId === currentBet.id) {
+        // Update odds display
+        updateOddsDisplay(data.odds);
+    }
+});
+
+function updateOddsDisplay(odds) {
+    // Update the odds in the current bet view
+    if (currentBet && odds) {
+        currentBet.outcomes.forEach((outcome, index) => {
+            if (odds[index]) {
+                outcome.odds = odds[index];
+            }
+        });
+        // Refresh the display
+        const urlParams = new URLSearchParams(window.location.search);
+        const betId = parseInt(urlParams.get('id'));
+        if (betId) {
+            loadBetDetail(betId);
+        }
+    }
+}
+
 // Check authentication and load bet
 document.addEventListener('DOMContentLoaded', () => {
     const currentUser = localStorage.getItem('currentUser');
@@ -20,6 +46,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (user.isAdmin) {
         document.getElementById('admin-link').style.display = 'inline';
     }
+    
+    // Connect WebSocket
+    connectWebSocket();
     
     // Get bet ID from URL
     const urlParams = new URLSearchParams(window.location.search);

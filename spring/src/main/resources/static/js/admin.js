@@ -1,3 +1,11 @@
+// WebSocket message handler
+registerWSMessageHandler((data) => {
+    // Handle admin-specific updates
+    if (data.type === 'bet_update' || data.type === 'new_bet') {
+        loadAdminBets(); // Reload admin table
+    }
+});
+
 // Check authentication and admin status
 document.addEventListener('DOMContentLoaded', () => {
     const currentUser = localStorage.getItem('currentUser');
@@ -13,6 +21,9 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = 'dashboard.html';
         return;
     }
+    
+    // Connect WebSocket
+    connectWebSocket();
     
     loadAdminBets();
 });
