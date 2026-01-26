@@ -55,92 +55,104 @@ init() ->
     ok.
 
 init_master_node(AllNodes) ->
-    %% Stop Mnesia if running
+    %% Clean start: stop, delete and recreate schema
     mnesia:stop(),
+    mnesia:delete_schema([node()]),
     
-    %% Try to connect to other nodes asynchronously (backend pattern)
-    io:format("Attempting to connect to other nodes...~n"),
-    lists:foreach(fun(Node) ->
-        case Node of
-            N when N =:= node() -> ok;
-            N -> spawn(fun() -> connect_node_loop(N, 10, 300) end)
-        end
-    end, AllNodes),
+    %% Wait for all other nodes to connect
+    OtherNodes = [N || N <- AllNodes, N =/= node()],
+    io:format("Waiting for all nodes to connect: ~p~n", [OtherNodes]),
+    wait_for_all_nodes(OtherNodes, 120),  %% Wait up to 120 seconds
     
-    %% Get currently connected nodes
+    %% Get all connected nodes including self
     ConnectedNodes = [node() | nodes()],
-    io:format("Connected nodes: ~p~n", [ConnectedNodes]),
+    io:format("All nodes connected: ~p~n", [ConnectedNodes]),
     
-    %% Create schema for all connected nodes
-    io:format("Creating schema for nodes: ~p~n", [ConnectedNodes]),
-    case mnesia:create_schema(ConnectedNodes) of
-        ok -> 
-            io:format("Schema created~n");
-        {error, {_, {already_exists, _}}} ->
-            io:format("Schema already exists~n")
-    end,
-    
-    %% Start Mnesia
-    mnesia:start(),
-    
-    %% Start Mnesia on remote nodes asynchronously
+    %% Delete schema on all remote nodes first
     lists:foreach(fun(Node) ->
         case Node of
             N when N =:= node() -> ok;
-            N -> spawn(fun() -> safe_start_remote_mnesia(N) end)
+            N -> 
+                io:format("Deleting schema on ~p...~n", [N]),
+                rpc:call(N, mnesia, stop, [], 5000),
+                rpc:call(N, mnesia, delete_schema, [[N]], 5000)
         end
     end, ConnectedNodes),
     
-    %% Wait a bit for remote Mnesia instances
-    timer:sleep(1000),
+    %% Create fresh schema for all connected nodes
+    io:format("Creating schema for nodes: ~p~n", [ConnectedNodes]),
+    ok = mnesia:create_schema(ConnectedNodes),
+    io:format("Schema created~n"),
     
-    %% Wait a bit for other nodes to start their Mnesia
-    timer:sleep(1000),
+    %% Start Mnesia on master
+    mnesia:start(),
     
-    %% Create tables if they don't exist
-    case mnesia:system_info(tables) of
-        [schema] ->
-            io:format("Creating tables...~n"),
-            create_tables(ConnectedNodes);
-        Tables ->
-            io:format("Tables already exist: ~p~n", [Tables])
-    end,
+    %% Start Mnesia on all remote nodes
+    lists:foreach(fun(Node) ->
+        case Node of
+            N when N =:= node() -> ok;
+            N -> 
+                io:format("Starting Mnesia on ~p...~n", [N]),
+                case rpc:call(N, mnesia, start, [], 5000) of
+                    ok -> io:format("Mnesia started on ~p~n", [N]);
+                    {error, Reason} -> io:format("Failed to start Mnesia on ~p: ~p~n", [N, Reason]);
+                    {badrpc, Reason} -> io:format("RPC failed to ~p: ~p~n", [N, Reason])
+                end
+        end
+    end, ConnectedNodes),
+    
+    %% Wait for all Mnesia instances to be ready
+    timer:sleep(2000),
+    
+    %% Always create tables (fresh start)
+    io:format("Creating tables with replicas on all nodes: ~p~n", [ConnectedNodes]),
+    create_tables(ConnectedNodes),
     
     %% Wait for tables
     wait_for_tables(),
     ok.
 
 init_worker_node() ->
+    %% Clean start: stop and delete local schema
+    mnesia:stop(),
+    mnesia:delete_schema([node()]),
+    
     %% Connect to master node
     MasterNode = 'betting_node1@10.2.1.62',
     io:format("Connecting to master node ~p...~n", [MasterNode]),
-    %% Request connection using net_kernel
-    _ = net_kernel:connect_node(MasterNode),
-    %% Wait briefly for the connection to establish
-    timer:sleep(500),
+    
+    %% Keep trying to connect to master
+    wait_for_master(MasterNode, 60),
+    
     case lists:member(MasterNode, nodes()) of
         true ->
             io:format("Connected to master node~n"),
-            
-            %% Stop Mnesia if running
-            mnesia:stop(),
-            
-            %% Start Mnesia
-            mnesia:start(),
-            
-            %% Wait for tables to be replicated
-            timer:sleep(2000),
-            
-            %% Add table copies if needed
-            add_table_copies(),
-            
-            %% Wait for tables
-            wait_for_tables();
+            io:format("Waiting for master to initialize Mnesia...~n"),
+            %% Master will create schema and start Mnesia via RPC, just wait for tables
+            wait_for_tables(),
+            ok;
         false ->
-            io:format("WARNING: Master node not available, starting standalone~n"),
-            mnesia:start()
-    end,
-    ok.
+            io:format("~n"),
+            io:format("╔════════════════════════════════════════════════════════════╗~n"),
+            io:format("║  ERROR: Master node not available!                         ║~n"),
+            io:format("║  Please start betting_node1@10.2.1.62 first.               ║~n"),
+            io:format("╚════════════════════════════════════════════════════════════╝~n"),
+            io:format("~n"),
+            erlang:error(master_node_unavailable)
+    end.
+
+wait_for_master(_, 0) ->
+    io:format("Timeout waiting for master node~n"),
+    ok;
+wait_for_master(MasterNode, SecondsLeft) ->
+    _ = net_kernel:connect_node(MasterNode),
+    timer:sleep(1000),
+    case lists:member(MasterNode, nodes()) of
+        true -> ok;
+        false ->
+            io:format("Waiting for master node... (~p seconds remaining)~n", [SecondsLeft - 1]),
+            wait_for_master(MasterNode, SecondsLeft - 1)
+    end.
 
 create_tables(Nodes) ->
     io:format("Creating tables with replicas on: ~p~n", [Nodes]),
@@ -171,24 +183,6 @@ create_tables(Nodes) ->
     io:format("Tables created successfully~n"),
     ok.
 
-add_table_copies() ->
-    io:format("Adding table copies to ~p...~n", [node()]),
-    
-    Tables = [account, game, bet],
-    lists:foreach(fun(Table) ->
-        case catch mnesia:add_table_copy(Table, node(), disc_copies) of
-            {atomic, ok} ->
-                io:format("Added replica for table ~p~n", [Table]);
-            {aborted, {already_exists, Table, _}} ->
-                io:format("Replica for table ~p already exists~n", [Table]);
-            {aborted, Reason} ->
-                io:format("Could not add replica for table ~p: ~p~n", [Table, Reason]);
-            {'EXIT', Reason} ->
-                io:format("Table ~p does not exist yet: ~p~n", [Table, Reason])
-        end
-    end, Tables),
-    ok.
-
 wait_for_tables() ->
     Tables = [account, game, bet],
     case mnesia:wait_for_tables(Tables, 10000) of
@@ -201,22 +195,35 @@ wait_for_tables() ->
             ok
     end.
 
-%% Async connect loop similar to backend style
-connect_node_loop(Node, 0, _Delay) ->
-    case lists:member(Node, nodes()) of
-        true -> ok;
-        false -> ok
-    end;
-connect_node_loop(Node, Attempts, Delay) ->
-    _ = net_kernel:connect_node(Node),
-    timer:sleep(Delay),
-    case lists:member(Node, nodes()) of
-        true -> ok;
-        false -> connect_node_loop(Node, Attempts - 1, Delay)
-    end.
+%% Wait for all nodes to connect before proceeding
+wait_for_all_nodes(NodesToWait, TimeoutSeconds) ->
+    wait_for_all_nodes(NodesToWait, TimeoutSeconds, 0).
 
-safe_start_remote_mnesia(Node) ->
-    case lists:member(Node, nodes()) of
-        true -> catch rpc:call(Node, mnesia, start, []); 
-        false -> ok
+wait_for_all_nodes([], _TimeoutSeconds, _Elapsed) ->
+    io:format("All nodes connected!~n"),
+    ok;
+wait_for_all_nodes(NodesToWait, TimeoutSeconds, Elapsed) when Elapsed >= TimeoutSeconds ->
+    io:format("TIMEOUT: Still waiting for nodes: ~p~n", [NodesToWait]),
+    io:format("Proceeding with connected nodes only...~n"),
+    ok;
+wait_for_all_nodes(NodesToWait, TimeoutSeconds, Elapsed) ->
+    %% Try to connect to all missing nodes
+    lists:foreach(fun(Node) ->
+        _ = net_kernel:connect_node(Node)
+    end, NodesToWait),
+    
+    timer:sleep(1000),
+    
+    %% Check which nodes are now connected
+    Connected = nodes(),
+    StillWaiting = [N || N <- NodesToWait, not lists:member(N, Connected)],
+    
+    case StillWaiting of
+        [] ->
+            io:format("All nodes connected!~n"),
+            ok;
+        _ ->
+            RemainingTime = TimeoutSeconds - Elapsed - 1,
+            io:format("Waiting for nodes ~p... (~p seconds remaining)~n", [StillWaiting, RemainingTime]),
+            wait_for_all_nodes(StillWaiting, TimeoutSeconds, Elapsed + 1)
     end.
