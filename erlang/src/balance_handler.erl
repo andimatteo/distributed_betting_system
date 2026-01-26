@@ -26,21 +26,25 @@ handle_get(Req0, State) ->
         }),
         {ok, Resp, State}
     catch
-        error:account_not_found ->
-            {ok, reply_json(Req0, 404, #{error => <<"Account not found">>}), State};
         error:_ ->
             {ok, reply_json(Req0, 500, #{error => <<"internal_error">>}), State}
     end.
 
 get_balance(UserId) ->
     F = fun() ->
-        mnesia:read(account, UserId)
+        case mnesia:read(account, UserId) of
+            [#account{balance = Balance}] -> 
+                Balance;
+            [] -> 
+                %% Account doesn't exist, create with initial balance
+                InitialBalance = application:get_env(betting_node, initial_balance, 100.0),
+                NewAccount = #account{user_id = UserId, balance = InitialBalance},
+                mnesia:write(NewAccount),
+                InitialBalance
+        end
     end,
-    {atomic, Rows} = mnesia:transaction(F),
-    case Rows of
-        [#account{balance = Balance}] -> Balance;
-        [] -> erlang:error(account_not_found)
-    end.
+    {atomic, Balance} = mnesia:transaction(F),
+    Balance.
 
 reply_json(Req, Status, Body) ->
     cowboy_req:reply(Status,
