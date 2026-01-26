@@ -43,7 +43,7 @@ echo "== Deploying Erlang Node $NODE_NUM ($NODE_NAME) to $NODE_IP =="
 
 # Deploy on remote node
 sshpass -p "$ERLANG_PASSWORD" ssh $SSH_OPTS "${ERLANG_USER}@${NODE_IP}" \
-    "NODE_NAME='${NODE_NAME}' JWT_SECRET='${JWT_SECRET}' bash -s" <<'REMOTE'
+    "NODE_NAME='${NODE_NAME}' NODE_IP='${NODE_IP}' JWT_SECRET='${JWT_SECRET}' bash -s" <<'REMOTE'
 set -euo pipefail
 
 cd ~/distributed_betting_system
@@ -62,11 +62,11 @@ cat > start_node.sh << STARTUP
 #!/bin/bash
 export JWT_SECRET='${JWT_SECRET}'
 cd ~/distributed_betting_system/erlang
-erl -sname ${NODE_NAME} -setcookie betting_cookie \\
+erl -name ${NODE_NAME}@${NODE_IP} -setcookie betting_cookie \\
     -pa _build/default/lib/*/ebin \\
     -config sys.config \\
-    "\$@" \\
-    -eval "application:start(betting_node)"
+    -eval "case application:ensure_all_started(betting_node) of {ok, _} -> io:format(\"~n✅ Application betting_node started successfully~n~n\"); {error, Reason} -> io:format(\"~n❌ Failed to start application: ~p~n~n\", [Reason]) end" \\
+    "\$@"
 STARTUP
 chmod +x start_node.sh
 
@@ -80,6 +80,8 @@ echo "To start the node, SSH to $NODE_IP and run:"
 echo "  cd ~/distributed_betting_system/erlang"
 echo "  ./start_node.sh              # foreground mode"
 echo "  ./start_node.sh -detached    # background mode"
+echo ""
+echo "The node will start as: ${NODE_NAME}@${NODE_IP}"
 if [ "$NODE_NUM" == "1" ]; then
     echo ""
     echo "Note: Node 1 (master) must be started FIRST before other nodes."
