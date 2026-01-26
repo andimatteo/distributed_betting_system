@@ -58,20 +58,20 @@ finish_game(GameId, Result) ->
                 UpdatedGame = Game#game{betting_open = false, result = Result},
                 mnesia:write(UpdatedGame),
 
-                Commission = application:get_env(betting_node, commission_percentage, 0.05),
                 TotalPool = TotOpt1 + TotOpt2,
-                NetPool = TotalPool * (1 - Commission),
-
                 WinningBets = get_winning_bets(GameId, Result),
 
                 {WinnersCount, TotalPaid, BalanceUpdates} = case Result of
                     opt1 when TotOpt1 > 0 ->
-                        pay_winners(WinningBets, NetPool, TotOpt1);
+                        pay_winners(WinningBets);
                     opt2 when TotOpt2 > 0 ->
-                        pay_winners(WinningBets, NetPool, TotOpt2);
+                        pay_winners(WinningBets);
                     _ ->
                         refund_all_bets(GameId)
                 end,
+
+                %% Update bookmaker balance: profit = total_pool - total_paid
+                update_bookmaker_balance(TotalPool - TotalPaid),
 
                 {WinnersCount, TotalPaid, BalanceUpdates};
             [] ->
@@ -104,12 +104,12 @@ ref_to_string(Other) ->
 get_winning_bets(GameId, WinningChoice) ->
     mnesia:select(bet, [{#bet{game_id = GameId, choice = WinningChoice, _ = '_'}, [], ['$_']}]).
 
-pay_winners(WinningBets, _NetPool, _TotalWinningAmount) ->
+pay_winners(WinningBets) ->
     %% Pay winners based on their stored odd at time of betting
     lists:foldl(fun(Bet, {Count, TotalPaid, Updates}) ->
         #bet{user_id = UserId, amount = BetAmount, odd = Odd} = Bet,
         
-        %% Calculate payout using the odd stored in the bet: balance = old_balance + amount * odd
+        %% Calculate payout using the odd stored in the bet: payout = amount * odd
         Payout = BetAmount * Odd,
         
         %% Update user balance
@@ -122,6 +122,18 @@ pay_winners(WinningBets, _NetPool, _TotalWinningAmount) ->
                 {Count, TotalPaid, Updates}
         end
     end, {0, 0.0, []}, WinningBets).
+
+update_bookmaker_balance(Amount) ->
+    BookmakerId = <<"bookmaker">>,
+    case mnesia:read(account, BookmakerId) of
+        [Account = #account{balance = Balance}] ->
+            NewBalance = Balance + Amount,
+            mnesia:write(Account#account{balance = NewBalance});
+        [] ->
+            %% Should not happen if initialized properly
+            BookmakerMoney = application:get_env(betting_node, bookmaker_money, 10000),
+            mnesia:write(#account{user_id = BookmakerId, balance = BookmakerMoney + Amount})
+    end.
 
 refund_all_bets(GameId) ->
     AllBets = mnesia:select(bet, [{#bet{game_id = GameId, _ = '_'}, [], ['$_']}]),

@@ -20,7 +20,6 @@ init(_) ->
             {"/ws", websocket_handler, []},
             
             %% User endpoints
-            {"/api/session", session_handler, []},
             {"/api/games", games_handler, []},
             {"/api/games/:game_id", game_detail_handler, []},
             {"/api/bet", bet_handler, []},

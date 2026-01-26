@@ -32,6 +32,9 @@ loop() ->
             }));
         
         {new_game, GameId, QuestionText, Opt1Text, Opt2Text} ->
+            %% Compute initial odds and caps (with no bets, virtual_init_bet handles it)
+            {Odd1, Odd2} = odds_calculator:calculate_odds(0, 0, [], []),
+            {CapOpt1, CapOpt2} = odds_calculator:calculate_caps(0, 0, [], []),
             broadcast_to_websockets(jsx:encode(#{
                 <<"opcode">> => <<"new_game">>,
                 <<"game_id">> => GameId,
@@ -39,10 +42,10 @@ loop() ->
                 <<"opt1_text">> => Opt1Text,
                 <<"opt2_text">> => Opt2Text,
                 <<"betting_open">> => true,
-                <<"odd1">> => 1.0,
-                <<"odd2">> => 1.0,
-                <<"cap_opt1">> => 10.0,
-                <<"cap_opt2">> => 10.0
+                <<"odd1">> => Odd1,
+                <<"odd2">> => Odd2,
+                <<"cap_opt1">> => CapOpt1,
+                <<"cap_opt2">> => CapOpt2
             }));
         
         {betting_closed, GameId} ->

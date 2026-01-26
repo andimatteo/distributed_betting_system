@@ -110,6 +110,9 @@ init_master_node(AllNodes) ->
     
     %% Wait for tables
     wait_for_tables(),
+    
+    %% Initialize bookmaker account
+    init_bookmaker_account(),
     ok.
 
 init_worker_node() ->
@@ -227,3 +230,18 @@ wait_for_all_nodes(NodesToWait, TimeoutSeconds, Elapsed) ->
             io:format("Waiting for nodes ~p... (~p seconds remaining)~n", [StillWaiting, RemainingTime]),
             wait_for_all_nodes(StillWaiting, TimeoutSeconds, Elapsed + 1)
     end.
+
+init_bookmaker_account() ->
+    BookmakerMoney = application:get_env(betting_node, bookmaker_money, 10000),
+    BookmakerId = <<"bookmaker">>,
+    F = fun() ->
+        case mnesia:read(account, BookmakerId) of
+            [] ->
+                mnesia:write(#account{user_id = BookmakerId, balance = BookmakerMoney}),
+                io:format("Bookmaker account created with balance: ~p~n", [BookmakerMoney]);
+            [_] ->
+                io:format("Bookmaker account already exists~n")
+        end
+    end,
+    {atomic, _} = mnesia:transaction(F),
+    ok.

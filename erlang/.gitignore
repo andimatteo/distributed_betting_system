@@ -5,3 +5,6 @@ secrets.config
 *.beam
 erl_crash.dump
 *.lock
+
+Dockerfile
+*.md

@@ -6,28 +6,26 @@
     calculate_potential_loss/2
 ]).
 
-%% Configuration constants
--define(MARGIN, 100).
--define(COMMISSION_PERCENTAGE, 0.05). % 5% commission
-
 %% Calculate current odds for both options
 %% calculate_odds(TotOpt1, TotOpt2, Bets1, Bets2) -> {Odd1, Odd2}
 calculate_odds(TotOpt1, TotOpt2, _Bets1, _Bets2) ->
-    Margin = ?MARGIN,
-    Commission = ?COMMISSION_PERCENTAGE,
+    %% Use virtual_init_bet from sys.config for odds calculation
+    VirtualInitBet = application:get_env(betting_node, virtual_init_bet, 100),
+    Commission = application:get_env(betting_node, commission_percentage, 0.05),
     
-    %% odd1(t+1) = 1 + (tot_opt2(t)+m)/(tot_opt1(t)+m)*(1-commission_percentage)
-    Odd1 = 1.0 + ((TotOpt2 + Margin) / (TotOpt1 + Margin)) * (1 - Commission),
+    %% odd1(t+1) = 1 + (tot_opt2(t)+v)/(tot_opt1(t)+v)*(1-commission_percentage)
+    Odd1 = 1.0 + ((TotOpt2 + VirtualInitBet) / (TotOpt1 + VirtualInitBet)) * (1 - Commission),
     
-    %% odd2(t+1) = 1 + (tot_opt1(t)+m)/(tot_opt2(t)+m)*(1-commission_percentage)
-    Odd2 = 1.0 + ((TotOpt1 + Margin) / (TotOpt2 + Margin)) * (1 - Commission),
+    %% odd2(t+1) = 1 + (tot_opt1(t)+v)/(tot_opt2(t)+v)*(1-commission_percentage)
+    Odd2 = 1.0 + ((TotOpt1 + VirtualInitBet) / (TotOpt2 + VirtualInitBet)) * (1 - Commission),
     
     {Odd1, Odd2}.
 
 %% Calculate betting caps for both options
 %% calculate_caps(TotOpt1, TotOpt2, Bets1, Bets2) -> {CapOpt1, CapOpt2}
 calculate_caps(TotOpt1, TotOpt2, Bets1, Bets2) ->
-    Margin = ?MARGIN,
+    %% Use margin from sys.config for cap calculation
+    Margin = application:get_env(betting_node, margin, 50),
     
     %% Calculate potential losses
     Loss1 = calculate_potential_loss(Bets1, opt1),
