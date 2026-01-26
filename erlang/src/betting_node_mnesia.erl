@@ -1,7 +1,6 @@
 -module(betting_node_mnesia).
 
 -export([init/0, wait_for_tables/0]).
- -export([init/0, wait_for_tables/0]).
 
 -record(account, {
     user_id,        % User ID from JWT
