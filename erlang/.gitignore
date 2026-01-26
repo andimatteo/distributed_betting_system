@@ -1,0 +1,7 @@
+# Erlang
+_build/
+mnesia_data/
+secrets.config
+*.beam
+erl_crash.dump
+*.lock

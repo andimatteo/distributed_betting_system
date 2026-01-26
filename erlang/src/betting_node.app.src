@@ -1,0 +1,18 @@
+{application, betting_node,
+ [{description, "Distributed Betting System Node"},
+  {vsn, "1.0.0"},
+  {registered, []},
+  {mod, {betting_node_app, []}},
+  {applications,
+   [kernel,
+    stdlib,
+    crypto,
+    jsx,
+    cowboy,
+    mnesia
+   ]},
+  {env,[]},
+  {modules, []},
+  {licenses, ["MIT"]},
+  {links, []}
+ ]}.
