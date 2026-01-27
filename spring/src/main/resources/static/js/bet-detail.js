@@ -7,6 +7,7 @@ let wheelAngle = 0;
 let wheelSpinning = false;
 let wheelAnimationId = null;
 let userBalance = 0;
+let pendingBalanceUpdate = null; // Store pending balance update during wheel spin
 
 // WebSocket message handler
 registerWSMessageHandler((data) => {
@@ -21,9 +22,20 @@ registerWSMessageHandler((data) => {
         // Refresh the display
         displayGameDetails();
     } else if (data.opcode === 'balance_update') {
-        // Update user balance
-        userBalance = data.balance;
-        updateBalanceDisplay();
+        // Check if this balance update is related to the current virtual game being viewed
+        const category = currentGame ? (currentGame.category || 'real') : 'real';
+        const isCurrentVirtualGame = data.game_id && currentGame && 
+                                      data.game_id === currentGame.game_id && 
+                                      category === 'virtual';
+        
+        if (isCurrentVirtualGame && wheelSpinning) {
+            // Delay balance update until wheel stops spinning
+            pendingBalanceUpdate = data.balance;
+        } else {
+            // Update balance immediately
+            userBalance = data.balance;
+            updateBalanceDisplay();
+        }
     } else if (data.opcode === 'bet_confirmed' && currentGame && data.game_id === currentGame.game_id) {
         // Show bet confirmation (balance will be updated via balance_update message)
         const choiceText = data.choice === 'opt1' ? currentGame.opt1_text : currentGame.opt2_text;
@@ -52,8 +64,15 @@ registerWSMessageHandler((data) => {
                 currentGame.betting_open = false;
                 displayGameDetails();
                 
-                // Reload balance after wheel stops
-                loadBalance();
+                // Apply pending balance update if there is one
+                if (pendingBalanceUpdate !== null) {
+                    userBalance = pendingBalanceUpdate;
+                    updateBalanceDisplay();
+                    pendingBalanceUpdate = null;
+                } else {
+                    // Reload balance if no pending update
+                    loadBalance();
+                }
             });
         } else {
             // For real games, update immediately
@@ -224,10 +243,24 @@ function displayGameDetails() {
     // Show result if available
     if (currentGame.result) {
         const resultText = currentGame.result === 'opt1' ? currentGame.opt1_text : currentGame.opt2_text;
-        const resultDiv = document.createElement('div');
-        resultDiv.style.cssText = 'background: #4CAF50; color: white; padding: 15px; border-radius: 8px; margin-top: 20px; text-align: center; font-weight: bold;';
-        resultDiv.textContent = `Result: ${resultText}`;
-        document.querySelector('.bet-form-section').prepend(resultDiv);
+        
+        // Check if result div already exists to avoid duplicates
+        let resultDiv = document.getElementById('game-result-display');
+        if (!resultDiv) {
+            resultDiv = document.createElement('div');
+            resultDiv.id = 'game-result-display';
+            resultDiv.style.cssText = 'background: #4CAF50; color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; font-weight: bold;';
+            
+            const bettingSection = document.querySelector('.betting-section');
+            if (bettingSection) {
+                // Insert at the beginning of betting section
+                bettingSection.insertBefore(resultDiv, bettingSection.firstChild);
+            }
+        }
+        
+        if (resultDiv) {
+            resultDiv.textContent = `Result: ${resultText}`;
+        }
     }
 }
 

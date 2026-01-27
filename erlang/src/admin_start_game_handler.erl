@@ -85,9 +85,9 @@ finish_game(GameId, Result) ->
             spawn(fun() ->
                 ResultBin = result_to_binary(Result),
                 broadcast_dispatcher:broadcast({game_result, GameId, ResultBin, WinnersCount, TotalPaid}),
-                %% Send individual balance updates to winners
+                %% Send individual balance updates to winners with game_id
                 lists:foreach(fun({UserId, NewBalance}) ->
-                    broadcast_dispatcher:broadcast({balance_update, UserId, NewBalance})
+                    broadcast_dispatcher:broadcast({balance_update, UserId, NewBalance, GameId})
                 end, BalanceUpdates)
             end),
             {WinnersCount, TotalPaid};

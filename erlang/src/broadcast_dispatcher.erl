@@ -77,6 +77,15 @@ loop() ->
                 <<"balance">> => NewBalance
             }));
         
+        {balance_update, UserId, NewBalance, GameId} ->
+            %% Send balance update with game_id (for game result payouts)
+            broadcast_to_user(UserId, jsx:encode(#{
+                <<"opcode">> => <<"balance_update">>,
+                <<"user_id">> => UserId,
+                <<"balance">> => NewBalance,
+                <<"game_id">> => GameId
+            }));
+        
         {bet_placed, UserId, GameId, Amount, Choice, Odd} ->
             %% Confirm bet to specific user
             ChoiceBin = case Choice of
