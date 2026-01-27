@@ -1,102 +1,164 @@
-// Mock data for bets
-const mockBets = [
-    {
-        id: 1,
-        category: 'real',
-        title: 'Will Manchester City win the Premier League 2026?',
-        outcomes: [
-            { label: 'Yes', odds: 1.65 },
-            { label: 'No', odds: 2.40 }
-        ],
-        volume: '$245,000',
-        participants: 1247,
-        status: 'open'
-    },
-    {
-        id: 2,
-        category: 'virtual',
-        title: 'Will Bitcoin reach $150,000 in 2026?',
-        outcomes: [
-            { label: 'Yes', odds: 3.20 },
-            { label: 'No', odds: 1.35 }
-        ],
-        volume: '$892,000',
-        participants: 3421,
-        status: 'open'
-    },
-    {
-        id: 3,
-        category: 'real',
-        title: 'US Presidential Election 2028 - Democratic Nomination',
-        outcomes: [
-            { label: 'Yes', odds: 2.10 },
-            { label: 'No', odds: 3.50 }
-        ],
-        volume: '$567,000',
-        participants: 2156,
-        status: 'open'
-    },
-    {
-        id: 4,
-        category: 'real',
-        title: 'NBA Championship 2026 Winner - Lakers',
-        outcomes: [
-            { label: 'Yes', odds: 4.50 },
-            { label: 'No', odds: 2.80 }
-        ],
-        volume: '$423,000',
-        participants: 1823,
-        status: 'open'
-    },
-    {
-        id: 5,
-        category: 'virtual',
-        title: 'Will Ethereum 2.0 be fully deployed by end of 2026?',
-        outcomes: [
-            { label: 'Yes', odds: 1.85 },
-            { label: 'No', odds: 2.05 }
-        ],
-        volume: '$312,000',
-        participants: 987,
-        status: 'open'
-    },
-    {
-        id: 6,
-        category: 'real',
-        title: 'UK General Election 2026 - Labour Majority?',
-        outcomes: [
-            { label: 'Yes', odds: 1.95 },
-            { label: 'No', odds: 1.95 }
-        ],
-        volume: '$198,000',
-        participants: 756,
-        status: 'open'
-    }
-];
+// API Configuration
+const API_BASE_URL = '/api';
 
-// Mock activity data
-const mockActivity = [
-    { action: 'Bet $500 on Yes', time: '2 minutes ago' },
-    { action: 'Bet $250 on No', time: '8 minutes ago' },
-    { action: 'Bet $1,000 on Yes', time: '15 minutes ago' },
-    { action: 'Bet $150 on No', time: '23 minutes ago' },
-    { action: 'Bet $750 on Yes', time: '31 minutes ago' }
-];
+// Helper function to get auth headers
+function getAuthHeaders() {
+    const token = localStorage.getItem('authToken');
+    return {
+        'Content-Type': 'application/json',
+        'Authorization': token ? `Bearer ${token}` : ''
+    };
+}
 
-// Load bets from localStorage on page load
-function loadBetsFromStorage() {
-    const storedBets = localStorage.getItem('bets');
-    if (storedBets) {
-        const parsedBets = JSON.parse(storedBets);
-        // Update mockBets array
-        mockBets.length = 0;
-        parsedBets.forEach(bet => mockBets.push(bet));
+// API Functions
+async function fetchGames() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/games`, {
+            method: 'GET',
+            headers: getAuthHeaders()
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to fetch games');
+        }
+        
+        const data = await response.json();
+        return data.games || [];
+    } catch (error) {
+        console.error('Error fetching games:', error);
+        return [];
     }
 }
 
-// Initialize bets from storage
-if (typeof window !== 'undefined') {
-    loadBetsFromStorage();
+async function fetchGameDetail(gameId) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/games/${gameId}`, {
+            method: 'GET',
+            headers: getAuthHeaders()
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to fetch game details');
+        }
+        
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching game details:', error);
+        throw error;
+    }
+}
+
+async function submitBetAPI(gameId, amount, choice) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/bet`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({
+                game_id: gameId,
+                amount: amount,
+                choice: choice
+            })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to place bet');
+        }
+        
+        return await response.json();
+    } catch (error) {
+        console.error('Error placing bet:', error);
+        throw error;
+    }
+}
+
+async function fetchBalance() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/balance`, {
+            method: 'GET',
+            headers: getAuthHeaders()
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to fetch balance');
+        }
+        
+        const data = await response.json();
+        return data.balance || 0;
+    } catch (error) {
+        console.error('Error fetching balance:', error);
+        return 0;
+    }
+}
+
+// Admin API Functions
+async function createGameAPI(questionText, opt1Text, opt2Text) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/admin/game`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({
+                question_text: questionText,
+                opt1_text: opt1Text,
+                opt2_text: opt2Text
+            })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to create game');
+        }
+        
+        return await response.json();
+    } catch (error) {
+        console.error('Error creating game:', error);
+        throw error;
+    }
+}
+
+async function stopBettingAPI(gameId) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/admin/stop_betting`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({
+                game_id: gameId
+            })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to stop betting');
+        }
+        
+        return await response.json();
+    } catch (error) {
+        console.error('Error stopping betting:', error);
+        throw error;
+    }
+}
+
+async function setGameResultAPI(gameId, result) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/admin/start_game`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({
+                game_id: gameId,
+                result: result
+            })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to set game result');
+        }
+        
+        return await response.json();
+    } catch (error) {
+        console.error('Error setting game result:', error);
+        throw error;
+    }
 }
 
 // Logout function (shared across pages)

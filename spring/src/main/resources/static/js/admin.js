@@ -1,8 +1,12 @@
+// State management
+let allGames = [];
+
 // WebSocket message handler
 registerWSMessageHandler((data) => {
     // Handle admin-specific updates
-    if (data.type === 'bet_update' || data.type === 'new_bet') {
-        loadAdminBets(); // Reload admin table
+    if (data.opcode === 'new_game' || data.opcode === 'odds_update' || 
+        data.opcode === 'betting_closed' || data.opcode === 'game_result') {
+        loadAdminGames(); // Reload admin table
     }
 });
 
@@ -25,182 +29,180 @@ document.addEventListener('DOMContentLoaded', () => {
     // Connect WebSocket
     connectWebSocket();
     
-    loadAdminBets();
+    loadAdminGames();
 });
 
-// Load bets in admin table
-function loadAdminBets() {
+// Load games in admin table
+async function loadAdminGames() {
     const tbody = document.getElementById('admin-bets-list');
-    tbody.innerHTML = '';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Loading games...</td></tr>';
     
-    mockBets.forEach(bet => {
-        const row = document.createElement('tr');
+    try {
+        allGames = await fetchGames();
         
-        const status = bet.status || 'open';
-        const result = bet.result || '-';
+        tbody.innerHTML = '';
         
-        // ID cell
-        const idCell = document.createElement('td');
-        idCell.textContent = bet.id;
-        
-        // Category cell
-        const categoryCell = document.createElement('td');
-        const categoryBadge = document.createElement('span');
-        categoryBadge.className = `category-badge ${bet.category}`;
-        categoryBadge.textContent = bet.category;
-        categoryCell.appendChild(categoryBadge);
-        
-        // Title cell
-        const titleCell = document.createElement('td');
-        titleCell.textContent = bet.title;
-        
-        // Status cell
-        const statusCell = document.createElement('td');
-        const statusBadge = document.createElement('span');
-        statusBadge.className = `status-badge ${status}`;
-        statusBadge.textContent = status;
-        statusCell.appendChild(statusBadge);
-        
-        // Result cell
-        const resultCell = document.createElement('td');
-        resultCell.textContent = result;
-        
-        // Actions cell
-        const actionsCell = document.createElement('td');
-        actionsCell.className = 'actions-cell';
-        
-        if (status === 'open') {
-            const stopBtn = document.createElement('button');
-            stopBtn.className = 'btn-small btn-warning';
-            stopBtn.textContent = 'Stop Betting';
-            stopBtn.onclick = () => stopBetting(bet.id);
-            actionsCell.appendChild(stopBtn);
+        if (allGames.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No games available</td></tr>';
+            return;
         }
         
-        const resultBtn = document.createElement('button');
-        resultBtn.className = 'btn-small btn-primary';
-        resultBtn.textContent = 'Set Result';
-        resultBtn.onclick = () => openResultModal(bet.id);
-        actionsCell.appendChild(resultBtn);
-        
-        if (status === 'closed') {
-            const reopenBtn = document.createElement('button');
-            reopenBtn.className = 'btn-small';
-            reopenBtn.textContent = 'Reopen';
-            reopenBtn.onclick = () => reopenBetting(bet.id);
-            actionsCell.appendChild(reopenBtn);
-        }
-        
-        row.appendChild(idCell);
-        row.appendChild(categoryCell);
-        row.appendChild(titleCell);
-        row.appendChild(statusCell);
-        row.appendChild(resultCell);
-        row.appendChild(actionsCell);
-        
-        tbody.appendChild(row);
-    });
-}
-
-// Create new bet
-function createBet(event) {
-    event.preventDefault();
-    
-    const category = document.getElementById('bet-category').value;
-    const title = document.getElementById('bet-title').value;
-    const option1 = document.getElementById('bet-option1').value;
-    const option2 = document.getElementById('bet-option2').value;
-    const initial1 = parseFloat(document.getElementById('bet-initial1').value);
-    const initial2 = parseFloat(document.getElementById('bet-initial2').value);
-    
-    // Calculate odds based on initial bets (using simple formula)
-    const total = initial1 + initial2;
-    const odds1 = total > 0 ? parseFloat((total / initial1).toFixed(2)) : 1.50;
-    const odds2 = total > 0 ? parseFloat((total / initial2).toFixed(2)) : 1.50;
-    
-    // Generate new ID
-    const newId = Math.max(...mockBets.map(b => b.id)) + 1;
-    
-    // Create new bet object
-    const newBet = {
-        id: newId,
-        category: category,
-        title: title,
-        outcomes: [
-            { label: option1, odds: odds1 },
-            { label: option2, odds: odds2 }
-        ],
-        volume: '$0',
-        participants: 0,
-        status: 'open'
-    };
-    
-    // Add to mock data
-    mockBets.push(newBet);
-    
-    // Save to localStorage for persistence
-    localStorage.setItem('bets', JSON.stringify(mockBets));
-    
-    // Show success message
-    alert(`Bet created successfully!\nID: ${newId}\nTitle: ${title}`);
-    
-    // Reset form
-    document.getElementById('create-bet-form').reset();
-    
-    // Reload table
-    loadAdminBets();
-}
-
-// Stop betting on a specific game
-function stopBetting(betId) {
-    const bet = mockBets.find(b => b.id === betId);
-    if (!bet) return;
-    
-    if (confirm(`Stop betting on "${bet.title}"?`)) {
-        bet.status = 'closed';
-        localStorage.setItem('bets', JSON.stringify(mockBets));
-        loadAdminBets();
-        alert('Betting stopped successfully!');
+        allGames.forEach(game => {
+            const row = document.createElement('tr');
+            
+            // ID cell
+            const idCell = document.createElement('td');
+            idCell.textContent = game.game_id.substring(0, 8) + '...'; // Shorten the ref
+            idCell.title = game.game_id; // Show full ID on hover
+            
+            // Category cell (not in backend, default to 'real')
+            const categoryCell = document.createElement('td');
+            const categoryBadge = document.createElement('span');
+            categoryBadge.className = 'category-badge real';
+            categoryBadge.textContent = 'real';
+            categoryCell.appendChild(categoryBadge);
+            
+            // Title cell
+            const titleCell = document.createElement('td');
+            titleCell.textContent = game.question_text;
+            
+            // Status cell
+            const statusCell = document.createElement('td');
+            const statusBadge = document.createElement('span');
+            statusBadge.className = 'status-badge';
+            
+            if (game.result) {
+                statusBadge.classList.add('closed');
+                statusBadge.textContent = 'finished';
+            } else if (game.betting_open) {
+                statusBadge.classList.add('open');
+                statusBadge.textContent = 'open';
+            } else {
+                statusBadge.classList.add('closed');
+                statusBadge.textContent = 'closed';
+            }
+            
+            statusCell.appendChild(statusBadge);
+            
+            // Result cell
+            const resultCell = document.createElement('td');
+            if (game.result) {
+                const resultText = game.result === 'opt1' ? game.opt1_text : game.opt2_text;
+                resultCell.textContent = resultText;
+                resultCell.style.fontWeight = 'bold';
+                resultCell.style.color = '#4CAF50';
+            } else {
+                resultCell.textContent = '-';
+            }
+            
+            // Actions cell
+            const actionsCell = document.createElement('td');
+            actionsCell.className = 'actions-cell';
+            
+            if (game.betting_open && !game.result) {
+                const stopBtn = document.createElement('button');
+                stopBtn.className = 'btn-small btn-warning';
+                stopBtn.textContent = 'Stop Betting';
+                stopBtn.onclick = () => stopBettingForGame(game.game_id);
+                actionsCell.appendChild(stopBtn);
+            }
+            
+            if (!game.result) {
+                const resultBtn = document.createElement('button');
+                resultBtn.className = 'btn-small btn-primary';
+                resultBtn.textContent = 'Set Result';
+                resultBtn.onclick = () => openResultModal(game);
+                actionsCell.appendChild(resultBtn);
+            }
+            
+            row.appendChild(idCell);
+            row.appendChild(categoryCell);
+            row.appendChild(titleCell);
+            row.appendChild(statusCell);
+            row.appendChild(resultCell);
+            row.appendChild(actionsCell);
+            
+            tbody.appendChild(row);
+        });
+    } catch (error) {
+        console.error('Error loading games:', error);
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: red;">Failed to load games</td></tr>';
     }
 }
 
-// Reopen betting
-function reopenBetting(betId) {
-    const bet = mockBets.find(b => b.id === betId);
-    if (!bet) return;
+// Create new game
+async function createBet(event) {
+    event.preventDefault();
     
-    if (confirm(`Reopen betting on "${bet.title}"?`)) {
-        bet.status = 'open';
-        delete bet.result;
-        localStorage.setItem('bets', JSON.stringify(mockBets));
-        loadAdminBets();
-        alert('Betting reopened successfully!');
+    const questionText = document.getElementById('bet-title').value;
+    const opt1Text = document.getElementById('bet-option1').value;
+    const opt2Text = document.getElementById('bet-option2').value;
+    
+    if (!questionText || !opt1Text || !opt2Text) {
+        alert('Please fill in all fields');
+        return;
+    }
+    
+    try {
+        const result = await createGameAPI(questionText, opt1Text, opt2Text);
+        
+        // Show success message
+        alert(`Game created successfully!\nID: ${result.game_id}\nQuestion: ${questionText}`);
+        
+        // Reset form
+        document.getElementById('create-bet-form').reset();
+        
+        // Reload table
+        loadAdminGames();
+    } catch (error) {
+        alert(`Failed to create game: ${error.message}`);
+    }
+}
+
+// Stop betting on a specific game
+async function stopBettingForGame(gameId) {
+    const game = allGames.find(g => g.game_id === gameId);
+    if (!game) return;
+    
+    if (confirm(`Stop betting on "${game.question_text}"?`)) {
+        try {
+            await stopBettingAPI(gameId);
+            alert('Betting stopped successfully!');
+            loadAdminGames();
+        } catch (error) {
+            alert(`Failed to stop betting: ${error.message}`);
+        }
     }
 }
 
 // Open result modal
-let currentResultBetId = null;
+let currentResultGame = null;
 
-function openResultModal(betId) {
-    const bet = mockBets.find(b => b.id === betId);
-    if (!bet) return;
+function openResultModal(game) {
+    if (!game) return;
     
-    currentResultBetId = betId;
+    currentResultGame = game;
     
     // Set modal title
-    document.getElementById('modal-bet-title').textContent = `Bet: ${bet.title}`;
+    document.getElementById('modal-bet-title').textContent = `Game: ${game.question_text}`;
     
     // Load result options
     const resultOptions = document.getElementById('result-options');
     resultOptions.innerHTML = '';
     
-    bet.outcomes.forEach((outcome) => {
-        const btn = document.createElement('button');
-        btn.className = 'btn btn-large result-option-btn';
-        btn.textContent = outcome.label;
-        btn.onclick = () => setResult(betId, outcome.label);
-        resultOptions.appendChild(btn);
-    });
+    // Option 1
+    const btn1 = document.createElement('button');
+    btn1.className = 'btn btn-large result-option-btn';
+    btn1.textContent = game.opt1_text;
+    btn1.onclick = () => setResult(game.game_id, 'opt1', game.opt1_text);
+    resultOptions.appendChild(btn1);
+    
+    // Option 2
+    const btn2 = document.createElement('button');
+    btn2.className = 'btn btn-large result-option-btn';
+    btn2.textContent = game.opt2_text;
+    btn2.onclick = () => setResult(game.game_id, 'opt2', game.opt2_text);
+    resultOptions.appendChild(btn2);
     
     // Show modal
     document.getElementById('result-modal').style.display = 'flex';
@@ -209,23 +211,25 @@ function openResultModal(betId) {
 // Close result modal
 function closeResultModal() {
     document.getElementById('result-modal').style.display = 'none';
-    currentResultBetId = null;
+    currentResultGame = null;
 }
 
-// Set result for a bet
-function setResult(betId, result) {
-    const bet = mockBets.find(b => b.id === betId);
-    if (!bet) return;
+// Set result for a game
+async function setResult(gameId, result, resultText) {
+    const game = allGames.find(g => g.game_id === gameId);
+    if (!game) return;
     
-    if (confirm(`Set result to "${result}" for "${bet.title}"?`)) {
-        bet.result = result;
-        bet.status = 'closed';
-        localStorage.setItem('bets', JSON.stringify(mockBets));
-        
-        closeResultModal();
-        loadAdminBets();
-        
-        alert(`Result set successfully!\nBet: ${bet.title}\nWinner: ${result}`);
+    if (confirm(`Set result to "${resultText}" for "${game.question_text}"?`)) {
+        try {
+            const response = await setGameResultAPI(gameId, result);
+            
+            closeResultModal();
+            loadAdminGames();
+            
+            alert(`Result set successfully!\nGame: ${game.question_text}\nWinner: ${resultText}\nWinners: ${response.winners_count}\nTotal Paid: $${response.total_paid.toFixed(2)}`);
+        } catch (error) {
+            alert(`Failed to set result: ${error.message}`);
+        }
     }
 }
 

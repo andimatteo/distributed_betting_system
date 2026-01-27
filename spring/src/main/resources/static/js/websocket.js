@@ -10,10 +10,13 @@ function connectWebSocket() {
     
     ws.onopen = () => {
         console.log('WebSocket connected');
-        // Send auth token
+        // Send auth token in the format expected by the Erlang backend
         const token = localStorage.getItem('authToken');
         if (token) {
-            ws.send(JSON.stringify({ type: 'auth', token }));
+            ws.send(JSON.stringify({ 
+                opcode: 'authenticate', 
+                token: token 
+            }));
         }
     };
     
