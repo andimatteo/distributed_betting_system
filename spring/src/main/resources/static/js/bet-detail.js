@@ -182,7 +182,13 @@ function displayGameDetails() {
     // Option 1
     const btn1 = document.createElement('div');
     btn1.className = 'outcome-btn';
-    btn1.onclick = () => selectOutcome('opt1');
+    if (!currentGame.result) {
+        btn1.onclick = () => selectOutcome('opt1');
+    } else {
+        btn1.classList.add('disabled');
+        btn1.style.cursor = 'not-allowed';
+        btn1.style.opacity = '0.6';
+    }
     
     const label1 = document.createElement('span');
     label1.className = 'outcome-btn-label';
@@ -199,7 +205,13 @@ function displayGameDetails() {
     // Option 2
     const btn2 = document.createElement('div');
     btn2.className = 'outcome-btn';
-    btn2.onclick = () => selectOutcome('opt2');
+    if (!currentGame.result) {
+        btn2.onclick = () => selectOutcome('opt2');
+    } else {
+        btn2.classList.add('disabled');
+        btn2.style.cursor = 'not-allowed';
+        btn2.style.opacity = '0.6';
+    }
     
     const label2 = document.createElement('span');
     label2.className = 'outcome-btn-label';
@@ -231,6 +243,7 @@ function displayGameDetails() {
         if (placeBetBtn) {
             placeBetBtn.disabled = true;
             placeBetBtn.textContent = currentGame.result ? 'Game Finished' : 'Betting Closed';
+            placeBetBtn.style.cursor = 'not-allowed';
         }
     } else {
         const placeBetBtn = document.querySelector('button[onclick="placeBet()"]');
@@ -530,11 +543,6 @@ function spinWheelWithCallback(stopColor, callback) {
     }
     
     animate();
-}
-
-// Test function for buttons
-function testSpin(color) {
-    spinWheel(color);
 }
 
 // Place bet

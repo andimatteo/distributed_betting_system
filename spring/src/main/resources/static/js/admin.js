@@ -40,13 +40,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target.value === 'virtual') {
             opt1Input.value = 'Red';
             opt2Input.value = 'Black';
-            opt1Input.readOnly = true;
-            opt2Input.readOnly = true;
+            opt1Input.disabled = true;
+            opt2Input.disabled = true;
         } else {
             opt1Input.value = '';
             opt2Input.value = '';
-            opt1Input.readOnly = false;
-            opt2Input.readOnly = false;
+            opt1Input.disabled = false;
+            opt2Input.disabled = false;
         }
     });
 });

@@ -37,20 +37,14 @@ handle_get(Req0, State) ->
 get_game(GameId) ->
     F = fun() ->
         [Game] = mnesia:read(game, GameId),
-        %% Calculate odds and caps if betting is open
-        {Odd1, Odd2, CapOpt1, CapOpt2} = case Game#game.betting_open of
-            true ->
-                AllBets = mnesia:select(bet, [{#bet{game_id = GameId, _ = '_'}, [], ['$_']}]),
-                Bets1 = [B || B <- AllBets, element(5, B) =:= opt1],
-                Bets2 = [B || B <- AllBets, element(5, B) =:= opt2],
-                TotOpt1 = Game#game.tot_opt1,
-                TotOpt2 = Game#game.tot_opt2,
-                {O1, O2} = odds_calculator:calculate_odds(TotOpt1, TotOpt2, Bets1, Bets2),
-                {C1, C2} = odds_calculator:calculate_caps(TotOpt1, TotOpt2, Bets1, Bets2),
-                {O1, O2, C1, C2};
-            false ->
-                {null, null, null, null}
-        end,
+        %% Always calculate odds and caps
+        AllBets = mnesia:select(bet, [{#bet{game_id = GameId, _ = '_'}, [], ['$_']}]),
+        Bets1 = [B || B <- AllBets, element(5, B) =:= opt1],
+        Bets2 = [B || B <- AllBets, element(5, B) =:= opt2],
+        TotOpt1 = Game#game.tot_opt1,
+        TotOpt2 = Game#game.tot_opt2,
+        {Odd1, Odd2} = odds_calculator:calculate_odds(TotOpt1, TotOpt2, Bets1, Bets2),
+        {CapOpt1, CapOpt2} = odds_calculator:calculate_caps(TotOpt1, TotOpt2, Bets1, Bets2),
         {Game, Odd1, Odd2, CapOpt1, CapOpt2}
     end,
     {atomic, {Game, Odd1, Odd2, CapOpt1, CapOpt2}} = mnesia:transaction(F),
