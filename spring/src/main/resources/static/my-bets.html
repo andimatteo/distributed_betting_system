@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BetMarket - Dashboard</title>
+    <title>BetMarket - My Bets</title>
     <link rel="stylesheet" href="css/common.css">
-    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/my-bets.css">
 </head>
 <body>
     <!-- Navigation -->
@@ -13,37 +13,38 @@
         <div class="container">
             <div class="nav-brand">BetMarket</div>
             <div class="nav-links">
-                <a href="dashboard.html" class="active">Dashboard</a>
-                <a href="my-bets.html">My Bets</a>
+                <a href="dashboard.html">Dashboard</a>
+                <a href="my-bets.html" class="active">My Bets</a>
                 <a href="admin.html" id="admin-link" style="display: none;">Admin</a>
                 <a href="#" onclick="logout()">Logout</a>
             </div>
         </div>
     </nav>
 
-    <!-- Dashboard Page -->
+    <!-- My Bets Page -->
     <div class="container">
         <div class="dashboard-header">
-            <h1>Active Markets</h1>
+            <h1>My Bets</h1>
             <div class="balance-card">
                 <span class="balance-label">Balance:</span>
-                <span class="balance-amount">$1,000.00</span>
+                <span class="balance-amount">$0.00</span>
             </div>
         </div>
 
         <div class="filters">
             <button class="filter-btn active" onclick="filterBets('all')">All</button>
-            <button class="filter-btn" onclick="filterBets('real')">Real</button>
-            <button class="filter-btn" onclick="filterBets('virtual')">Virtual</button>
+            <button class="filter-btn" onclick="filterBets('pending')">Pending</button>
+            <button class="filter-btn" onclick="filterBets('won')">Won</button>
+            <button class="filter-btn" onclick="filterBets('lost')">Lost</button>
         </div>
 
-        <div class="bets-grid" id="bets-grid">
+        <div class="bets-container" id="bets-container">
             <!-- Bets will be dynamically loaded here -->
         </div>
     </div>
 
     <script src="js/websocket.js"></script>
     <script src="js/data.js"></script>
-    <script src="js/dashboard.js"></script>
+    <script src="js/my-bets.js"></script>
 </body>
 </html>

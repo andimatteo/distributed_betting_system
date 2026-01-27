@@ -24,6 +24,8 @@ init(_) ->
             {"/api/games/:game_id", game_detail_handler, []},
             {"/api/bet", bet_handler, []},
             {"/api/balance", balance_handler, []},
+            {"/api/user/bets", user_bets_handler, []},
+            {"/api/user/bets/:game_id", user_bets_handler, []},
             
             %% Admin endpoints
             {"/api/admin/game", admin_game_handler, []},

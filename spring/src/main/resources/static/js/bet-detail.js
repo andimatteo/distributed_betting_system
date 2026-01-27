@@ -64,6 +64,9 @@ registerWSMessageHandler((data) => {
                 currentGame.betting_open = false;
                 displayGameDetails();
                 
+                // Reload user's bets to show outcome
+                loadMyBetsForGame(currentGame.game_id);
+                
                 // Apply pending balance update if there is one
                 if (pendingBalanceUpdate !== null) {
                     userBalance = pendingBalanceUpdate;
@@ -79,6 +82,9 @@ registerWSMessageHandler((data) => {
             currentGame.result = resultData.result;
             currentGame.betting_open = false;
             displayGameDetails();
+            
+            // Reload user's bets to show outcome
+            loadMyBetsForGame(currentGame.game_id);
         }
     }
 });
@@ -145,6 +151,9 @@ async function loadGameDetail(gameId) {
     try {
         currentGame = await fetchGameDetail(gameId);
         displayGameDetails();
+        
+        // Load user's bets for this game
+        loadMyBetsForGame(gameId);
         
         // Initialize spinning wheel for virtual events if needed
         const category = currentGame.category || 'real';
@@ -595,6 +604,9 @@ async function placeBet() {
             displayGameDetails();
         }
         
+        // Reload user's bets for this game
+        loadMyBetsForGame(currentGame.game_id);
+        
         // Reset form
         document.getElementById('bet-amount').value = '';
         selectedOutcome = null;
@@ -605,5 +617,69 @@ async function placeBet() {
         
     } catch (error) {
         alert(`Failed to place bet: ${error.message}`);
+    }
+}
+
+// Load and display user's bets for the current game
+async function loadMyBetsForGame(gameId) {
+    const activityList = document.getElementById('activity-list');
+    
+    try {
+        const response = await fetchUserBets(gameId);
+        const bets = response.bets || [];
+        
+        if (bets.length === 0) {
+            activityList.innerHTML = '<div class="no-activity">You haven\'t placed any bets on this game yet.</div>';
+            return;
+        }
+        
+        // Sort by placed_at descending
+        bets.sort((a, b) => b.placed_at - a.placed_at);
+        
+        activityList.innerHTML = '';
+        
+        bets.forEach(bet => {
+            const betItem = document.createElement('div');
+            betItem.className = 'activity-item';
+            
+            // Add status class
+            if (bet.won === true) {
+                betItem.classList.add('won');
+            } else if (bet.won === false) {
+                betItem.classList.add('lost');
+            } else {
+                betItem.classList.add('pending');
+            }
+            
+            const choiceText = bet.choice === 'opt1' ? bet.opt1_text : bet.opt2_text;
+            
+            let statusHTML = '';
+            if (bet.won === null) {
+                statusHTML = '<span class="status-badge pending">Pending</span>';
+            } else if (bet.won === true) {
+                statusHTML = `<span class="status-badge won">Won: $${bet.payout.toFixed(2)}</span>`;
+            } else {
+                statusHTML = '<span class="status-badge lost">Lost</span>';
+            }
+            
+            betItem.innerHTML = `
+                <div class="bet-info-row">
+                    <div>
+                        <div class="bet-choice">${choiceText}</div>
+                        <div class="bet-details-small">$${bet.amount.toFixed(2)} at ${bet.odd.toFixed(2)}x odds</div>
+                        <div class="bet-timestamp">${new Date(bet.placed_at).toLocaleString()}</div>
+                    </div>
+                    <div class="bet-status-col">
+                        ${statusHTML}
+                        <div class="potential-payout">Potential: $${(bet.amount * bet.odd).toFixed(2)}</div>
+                    </div>
+                </div>
+            `;
+            
+            activityList.appendChild(betItem);
+        });
+    } catch (error) {
+        console.error('Error loading user bets:', error);
+        activityList.innerHTML = '<div class="error-message">Failed to load your bets.</div>';
     }
 }

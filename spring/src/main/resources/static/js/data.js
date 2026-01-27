@@ -99,6 +99,31 @@ async function fetchBalance() {
     }
 }
 
+// Fetch user's bets
+async function fetchUserBets(gameId = null) {
+    try {
+        const url = gameId 
+            ? `${API_BASE_URL}/user/bets/${gameId}`
+            : `${API_BASE_URL}/user/bets`;
+            
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: getAuthHeaders()
+        });
+        
+        if (!response.ok) {
+            const erlangNode = response.headers.get('x-erlang-node');
+            console.error(`fetchUserBets failed [${response.status}] from node: ${erlangNode || 'unknown'}`);
+            throw new Error('Failed to fetch bets');
+        }
+        
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching user bets:', error);
+        throw error;
+    }
+}
+
 // Admin API Functions
 async function createGameAPI(questionText, opt1Text, opt2Text, category) {
     try {

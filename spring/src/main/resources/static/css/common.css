@@ -61,6 +61,11 @@ body {
     color: var(--text-primary);
 }
 
+.nav-links a.active {
+    color: var(--primary);
+    font-weight: 600;
+}
+
 /* Container */
 .container {
     max-width: 1200px;
