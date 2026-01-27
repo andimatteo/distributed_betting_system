@@ -4,7 +4,7 @@
 
 -export([init/2]).
 
--record(game, {game_id, question_text, opt1_text, opt2_text, result, betting_open, tot_opt1, tot_opt2, created_at}).
+-record(game, {game_id, question_text, opt1_text, opt2_text, category, result, betting_open, tot_opt1, tot_opt2, created_at}).
 
 init(Req0, State) ->
     %% Only accept POST
