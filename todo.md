@@ -21,11 +21,17 @@
   - [] Data di bet da correggere (1970)
   - [] Togliere alert
   - [] Conto admin da mostrare
-  - [] Aggiornamento volume totale per ogni scommesse
+  - [] Aggiornamento volume totale per ogni scommessa
+  - [] Togliere numero participants
+  - [] Togliere console log generali
+  - [] Togliere nel websocket message di vincita il totale pagato e i vincitori
   - [] Chiusura scommesse sulla my bets
+  - [] Refreshare solo quello che va refreshato quando arriva il websocket message
+  - [] Aggiungere POST /balance per aumentare il saldo
 
 OPZIONALE 
   - [] separare websocket tra bet page e dashboard
+  - [] id fatti bene e non il counter condiviso
 
 ## API endpoints
 - API login/registrazione/logout (user e admin)
