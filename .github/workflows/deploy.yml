@@ -47,6 +47,13 @@ jobs:
         run: |
           bash deploy/deploy_spring.sh
 
+      - name: Stop all Erlang nodes first
+        if: ${{ github.event_name == 'push' || inputs.deploy_erlang }}
+        env:
+          ERLANG_PASSWORD: ${{ secrets.ERLANG_PASSWORD }}
+        run: |
+          bash deploy/stop_all_erlang.sh
+
       - name: Deploy Erlang Node 1 (Master)
         if: ${{ github.event_name == 'push' || inputs.deploy_erlang }}
         env:

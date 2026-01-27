@@ -73,11 +73,6 @@ chmod +x start_node.sh
 echo "Application compiled successfully on $NODE_NAME"
 echo "Startup script created: ~/distributed_betting_system/erlang/start_node.sh"
 
-# Stop existing node if running
-echo "Stopping any existing node..."
-pkill -f "name ${NODE_NAME}@${NODE_IP}" || true
-sleep 2
-
 # Start the node in detached mode
 echo "Starting ${NODE_NAME}..."
 ./start_node.sh -detached
