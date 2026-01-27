@@ -259,7 +259,7 @@ wait_for_all_nodes(NodesToWait, TimeoutSeconds, Elapsed) ->
     end.
 
 init_bookmaker_account() ->
-    BookmakerMoney = application:get_env(betting_node, bookmaker_money, 10000),
+    BookmakerMoney = application:get_env(betting_node, bookmaker_money, 0),
     BookmakerId = <<"bookmaker">>,
     F = fun() ->
         case mnesia:read(account, BookmakerId) of

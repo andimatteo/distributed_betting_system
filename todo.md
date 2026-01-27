@@ -7,15 +7,25 @@
     - [x] Come funziona MnesiaDB?
   - [x] Tet: Parte admin
 - [x] Tren: Nginx load balancer
-  - [] proxy globale per i client (todo after erlang implementation)
-- [] Train: Frontend
-- [] Train: WebSocket
-- [] Spring
+  - [x] proxy globale per i client
+- [x] Train: Frontend
+- [x] Train: WebSocket
+- [x] Spring
   - [x] Tren: MySQL
   - [x] Tren: Maven
   - [x] API per login/registrazione
     - [x] Token JWT condivisi con Erlang (to see further with erlang implementation)
     - [x] Protocollo di sicurezza e validazione JWT
+  - [] Utenti non registrati possono vedere cose
+  - [] Separare vecchie scommesse da quelle attive
+  - [] Data di bet da correggere (1970)
+  - [] Togliere alert
+  - [] Conto admin da mostrare
+  - [] Aggiornamento volume totale per ogni scommesse
+  - [] Chiusura scommesse sulla my bets
+
+OPZIONALE 
+  - [] separare websocket tra bet page e dashboard
 
 ## API endpoints
 - API login/registrazione/logout (user e admin)
