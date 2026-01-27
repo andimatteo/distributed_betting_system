@@ -6,12 +6,14 @@
     calculate_potential_loss/2
 ]).
 
+-record(bet, {bet_id, user_id, game_id, amount, choice, odd, placed_at}).
+
 %% Calculate current odds for both options
 %% calculate_odds(TotOpt1, TotOpt2, Bets1, Bets2) -> {Odd1, Odd2}
 calculate_odds(TotOpt1, TotOpt2, _Bets1, _Bets2) ->
     %% Use virtual_init_bet from sys.config for odds calculation
     VirtualInitBet = application:get_env(betting_node, virtual_init_bet, 100),
-    Commission = application:get_env(betting_node, commission_percentage, 0.05),
+    Commission = application:get_env(betting_node, commission_percentage, 0.5),
     
     %% odd1(t+1) = 1 + (tot_opt2(t)+v)/(tot_opt1(t)+v)*(1-commission_percentage)
     Odd1 = 1.0 + ((TotOpt2 + VirtualInitBet) / (TotOpt1 + VirtualInitBet)) * (1 - Commission),
@@ -46,6 +48,6 @@ calculate_caps(TotOpt1, TotOpt2, Bets1, Bets2) ->
 %% loss1(t) = sum(bet1(i) * odd1(i)) for all previous bets on opt1
 calculate_potential_loss(Bets, _Choice) ->
     lists:foldl(fun(Bet, Acc) ->
-        {_, _, _, Amount, _, Odd, _} = Bet,
+        #bet{amount = Amount, odd = Odd} = Bet,
         Acc + (Amount * Odd)
     end, 0.0, Bets).

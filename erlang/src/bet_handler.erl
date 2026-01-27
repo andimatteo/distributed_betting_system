@@ -62,7 +62,11 @@ handle_post(Req0, State) ->
         throw:insufficient_balance ->
             {ok, reply_json(Req1, 400, #{error => <<"Insufficient balance">>}), State};
         throw:betting_closed ->
-            {ok, reply_json(Req1, 400, #{error => <<"Betting is closed">>}), State}
+            {ok, reply_json(Req1, 400, #{error => <<"Betting is closed">>}), State};
+        error:game_not_found ->
+            {ok, reply_json(Req1, 404, #{error => <<"Game not found">>}), State};
+        error:_ ->
+            {ok, reply_json(Req1, 500, #{error => <<"internal_error">>}), State}
     end.
 
 parse_bet_request(Body) ->

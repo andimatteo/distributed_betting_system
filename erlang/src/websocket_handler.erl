@@ -9,11 +9,11 @@
 init(Req, State) ->
     {cowboy_websocket, Req, State, #{idle_timeout => 60000}}.
 
-websocket_init(State) ->
+websocket_init(_State) ->
     %% Register as anonymous WebSocket connection
     global:register_name({ws, node(), self()}, self()),
     io:format("WebSocket connection registered: ~p~n", [self()]),
-    {[], State#{user_id => undefined}}.
+    {[], #{user_id => undefined}}.
 
 websocket_handle({text, Msg}, State) ->
     try jsx:decode(Msg, [return_maps]) of
