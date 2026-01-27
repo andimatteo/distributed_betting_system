@@ -138,6 +138,36 @@ body {
     color: var(--text-primary);
 }
 
+/* Category Badges */
+.bet-category,
+.category-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.bet-category.real,
+.category-badge.real {
+    background: #10b981;
+    color: white;
+}
+
+.bet-category.virtual,
+.category-badge.virtual {
+    background: #8b5cf6;
+    color: white;
+}
+
+/* Default category color */
+.bet-category,
+.category-badge {
+    background: var(--primary);
+    color: white;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .nav-links a {

@@ -89,9 +89,9 @@ async function loadBalance() {
 
 // Update balance display
 function updateBalanceDisplay() {
-    const balanceEl = document.querySelector('.balance-display');
+    const balanceEl = document.querySelector('.balance-amount');
     if (balanceEl) {
-        balanceEl.textContent = `Balance: $${userBalance.toFixed(2)}`;
+        balanceEl.textContent = `$${userBalance.toFixed(2)}`;
     }
 }
 

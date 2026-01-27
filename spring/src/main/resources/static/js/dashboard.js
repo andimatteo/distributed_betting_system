@@ -11,6 +11,12 @@ registerWSMessageHandler((data) => {
         loadBets(); // Reload all games when a new one is created
     } else if (data.opcode === 'betting_closed' || data.opcode === 'game_result') {
         loadBets(); // Reload to show updated status
+    } else if (data.opcode === 'balance_update') {
+        // Update user balance in real-time
+        const balanceElement = document.querySelector('.balance-amount');
+        if (balanceElement && data.balance != null) {
+            balanceElement.textContent = `$${data.balance.toFixed(2)}`;
+        }
     }
 });
 

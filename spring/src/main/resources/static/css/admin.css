@@ -95,25 +95,6 @@
     background: var(--bg-hover);
 }
 
-.category-badge {
-    display: inline-block;
-    padding: 0.25rem 0.75rem;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-}
-
-.category-badge.real {
-    background: #10b981;
-    color: white;
-}
-
-.category-badge.virtual {
-    background: #8b5cf6;
-    color: white;
-}
-
 .status-badge {
     display: inline-block;
     padding: 0.25rem 0.75rem;
