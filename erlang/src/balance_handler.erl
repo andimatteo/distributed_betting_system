@@ -17,17 +17,25 @@ init(Req0, State) ->
     end.
 
 handle_get(Req0, State) ->
-    try
-        {ok, UserId, _IsAdmin} = jwt_helper:validate_jwt(Req0),
-        Balance = get_balance(UserId),
-        Resp = reply_json(Req0, 200, #{
-            user_id => UserId,
-            balance => Balance
-        }),
-        {ok, Resp, State}
-    catch
-        error:_ ->
-            {ok, reply_json(Req0, 500, #{error => <<"internal_error">>}), State}
+    case jwt_helper:validate_jwt(Req0) of
+        {ok, UserId, _IsAdmin} ->
+            try
+                Balance = get_balance(UserId),
+                Resp = reply_json(Req0, 200, #{
+                    user_id => UserId,
+                    balance => Balance
+                }),
+                {ok, Resp, State}
+            catch
+                error:_ ->
+                    {ok, reply_json(Req0, 500, #{error => <<"internal_error">>}), State}
+            end;
+        {error, missing_token} ->
+            Req = reply_json(Req0, 401, #{error => <<"Missing authorization token">>}),
+            {ok, Req, State};
+        {error, _Reason} ->
+            Req = reply_json(Req0, 401, #{error => <<"Invalid or expired token">>}),
+            {ok, Req, State}
     end.
 
 get_balance(UserId) ->

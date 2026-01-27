@@ -19,12 +19,20 @@ init(Req0, State) ->
     end.
 
 handle_get(Req0, State) ->
-    {ok, _UserId, _IsAdmin} = jwt_helper:validate_jwt(Req0),
-    GameIdStr = cowboy_req:binding(game_id, Req0),
-    GameId = string_to_ref(GameIdStr),
-    {ok, Game} = get_game(GameId),
-    Req = reply_json(Req0, 200, Game),
-    {ok, Req, State}.
+    case jwt_helper:validate_jwt(Req0) of
+        {ok, _UserId, _IsAdmin} ->
+            GameIdStr = cowboy_req:binding(game_id, Req0),
+            GameId = string_to_ref(GameIdStr),
+            {ok, Game} = get_game(GameId),
+            Req = reply_json(Req0, 200, Game),
+            {ok, Req, State};
+        {error, missing_token} ->
+            Req = reply_json(Req0, 401, #{error => <<"Missing authorization token">>}),
+            {ok, Req, State};
+        {error, _Reason} ->
+            Req = reply_json(Req0, 401, #{error => <<"Invalid or expired token">>}),
+            {ok, Req, State}
+    end.
 
 get_game(GameId) ->
     F = fun() ->

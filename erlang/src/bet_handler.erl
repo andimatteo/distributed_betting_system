@@ -20,7 +20,18 @@ init(Req0, State) ->
     end.
 
 handle_post(Req0, State) ->
-    {ok, UserId, _IsAdmin} = jwt_helper:validate_jwt(Req0),
+    case jwt_helper:validate_jwt(Req0) of
+        {ok, UserId, _IsAdmin} ->
+            handle_bet_placement(Req0, UserId, State);
+        {error, missing_token} ->
+            Req = reply_json(Req0, 401, #{error => <<"Missing authorization token">>}),
+            {ok, Req, State};
+        {error, _Reason} ->
+            Req = reply_json(Req0, 401, #{error => <<"Invalid or expired token">>}),
+            {ok, Req, State}
+    end.
+
+handle_bet_placement(Req0, UserId, State) ->
     {ok, Body, Req1} = cowboy_req:read_body(Req0),
     
     try
