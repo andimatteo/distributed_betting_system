@@ -77,9 +77,7 @@ loop() ->
             broadcast_to_websockets(jsx:encode(#{
                 <<"opcode">> => <<"game_result">>,
                 <<"game_id">> => GameId,
-                <<"result">> => Result,
-                <<"winners_count">> => WinnersCount,
-                <<"total_paid">> => TotalPaid
+                <<"result">> => Result
             }));
         
         {balance_update, UserId, NewBalance} ->

@@ -25,15 +25,16 @@
   - [X] Aggiornamento volume totale per ogni scommessa
   - [X] Togliere numero participants
   - [X] Togliere console log generali
-  - [] Togliere nel websocket message di vincita il totale pagato e i vincitori
-  - [] Aggiornamento chiusura scommesse sulla my bets, bilancio in bybets e mybets in detailed view
-  - [] Refreshare solo quello che va refreshato quando arriva il websocket message
+  - [X] Togliere nel websocket message di vincita il totale pagato e i vincitori
+  - [X] Aggiornamento chiusura scommesse sulla my bets, bilancio in bybets e mybets in detailed view
+  - [X] Refreshare solo quello che va refreshato quando arriva il websocket message
   - [X] Aggiungere POST /balance per aumentare il saldo
   - [X] Display bet amount input only after selecting an option
   - [X] Redirect to login if JWT expired
   - [X] Disabilitare meglio le opzioni delle scommesse chiuse
   - [X] CSS pulsanti filtri in mybets
   - [] Extra safety: the frontend sends the expected odds along with the bet, so the backend can warn if they changed in the meantime and avoid placing bets with unexpected odds
+  - [] Race condition in balance update
 
 OPZIONALE 
   - [] separare websocket tra bet page e dashboard

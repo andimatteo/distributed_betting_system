@@ -38,16 +38,15 @@ registerWSMessageHandler((data) => {
             updateBalanceDisplay();
         }
     } else if (data.opcode === 'bet_confirmed' && currentGame && data.game_id === currentGame.game_id) {
-        const choiceText = data.choice === 'opt1' ? currentGame.opt1_text : currentGame.opt2_text;
+        // Reload user's bets for this game to show the new bet
+        loadMyBetsForGame(currentGame.game_id);
     } else if (data.opcode === 'betting_closed' && currentGame && data.game_id === currentGame.game_id) {
         currentGame.betting_open = false;
         displayGameDetails();
     } else if (data.opcode === 'game_result' && currentGame && data.game_id === currentGame.game_id) {
         // Store the result data
         const resultData = {
-            result: data.result,
-            winners_count: data.winners_count,
-            total_paid: data.total_paid
+            result: data.result
         };
         
         // If virtual game, spin the wheel first

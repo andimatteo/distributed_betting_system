@@ -37,9 +37,7 @@ handle_post(Req0, State) ->
         Resp = reply_json(Req1, 200, #{
             message => <<"Game finished and payouts processed">>,
             game_id => GameIdInt,
-            result => result_to_binary(Result),
-            winners_count => WinnersCount,
-            total_paid => TotalPaid
+            result => result_to_binary(Result)
         }),
         {ok, Resp, State}
     catch

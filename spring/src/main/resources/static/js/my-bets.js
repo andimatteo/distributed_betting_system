@@ -162,7 +162,7 @@ function createBetCard(bet) {
         // Pending
         const statusBadge = document.createElement('span');
         statusBadge.className = 'status-badge pending';
-        statusBadge.textContent = bet.betting_open ? 'Betting Open' : 'Waiting for Result';
+        statusBadge.textContent = 'Pending';
         statusDiv.appendChild(statusBadge);
     } else if (bet.won === true) {
         // Won
