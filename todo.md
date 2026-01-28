@@ -22,7 +22,7 @@
   - [] Togliere alert
   - [] Conto admin da mostrare
   - [] Aggiornamento volume totale per ogni scommessa
-  - [] Togliere numero participants
+  - [X] Togliere numero participants
   - [] Togliere console log generali
   - [] Togliere nel websocket message di vincita il totale pagato e i vincitori
   - [] Chiusura scommesse sulla my bets

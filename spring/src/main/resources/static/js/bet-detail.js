@@ -182,7 +182,6 @@ function displayGameDetails() {
     
     const totalVolume = (currentGame.tot_opt1 || 0) + (currentGame.tot_opt2 || 0);
     document.getElementById('detail-volume').textContent = `$${totalVolume.toFixed(2)}`;
-    document.getElementById('detail-participants').textContent = '-'; // Backend doesn't track this
     
     // Load outcome buttons
     const outcomesContainer = document.getElementById('outcome-options');
