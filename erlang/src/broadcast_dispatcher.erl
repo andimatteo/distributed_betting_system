@@ -103,47 +103,20 @@ loop() ->
                 <<"timestamp">> => Timestamp
             }));
         
-        {bet_placed, UserId, GameId, BetId, Amount, Choice, Odd} ->
-            %% Confirm bet to specific user - get game details for option texts
-            case betting_node_mnesia:get_game(GameId) of
-                {ok, Game} ->
-                    Opt1Text = maps:get(opt1_text, Game),
-                    Opt2Text = maps:get(opt2_text, Game),
-                    ChoiceBin = case Choice of
-                        opt1 -> <<"opt1">>;
-                        opt2 -> <<"opt2">>;
-                        _ -> <<"unknown">>
-                    end,
-                    Timestamp = erlang:system_time(millisecond),
-                    broadcast_to_user(UserId, jsx:encode(#{
-                        <<"opcode">> => <<"bet_confirmed">>,
-                        <<"bet_id">> => BetId,
-                        <<"game_id">> => GameId,
-                        <<"amount">> => Amount,
-                        <<"choice">> => ChoiceBin,
-                        <<"odd">> => Odd,
-                        <<"opt1_text">> => Opt1Text,
-                        <<"opt2_text">> => Opt2Text,
-                        <<"placed_at">> => Timestamp
-                    }));
-                {error, _} ->
-                    %% Fallback without option texts
-                    ChoiceBin = case Choice of
-                        opt1 -> <<"opt1">>;
-                        opt2 -> <<"opt2">>;
-                        _ -> <<"unknown">>
-                    end,
-                    Timestamp = erlang:system_time(millisecond),
-                    broadcast_to_user(UserId, jsx:encode(#{
-                        <<"opcode">> => <<"bet_confirmed">>,
-                        <<"bet_id">> => BetId,
-                        <<"game_id">> => GameId,
-                        <<"amount">> => Amount,
-                        <<"choice">> => ChoiceBin,
-                        <<"odd">> => Odd,
-                        <<"placed_at">> => Timestamp
-                    }))
-            end;
+        {bet_placed, UserId, GameId, Amount, Choice, Odd} ->
+            %% Confirm bet to specific user
+            ChoiceBin = case Choice of
+                opt1 -> <<"opt1">>;
+                opt2 -> <<"opt2">>;
+                _ -> <<"unknown">>
+            end,
+            broadcast_to_user(UserId, jsx:encode(#{
+                <<"opcode">> => <<"bet_confirmed">>,
+                <<"game_id">> => GameId,
+                <<"amount">> => Amount,
+                <<"choice">> => ChoiceBin,
+                <<"odd">> => Odd
+            }));
         
         {admin_only, {profit_update, Profit}} ->
             %% Send profit update only to admin WebSocket connections
