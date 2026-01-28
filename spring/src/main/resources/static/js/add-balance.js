@@ -1,16 +1,10 @@
-let lastBalanceTimestamp = 0;
-
 // WebSocket message handler
 registerWSMessageHandler((data) => {
     // Update balance when receiving balance_update message
     if (data.opcode === 'balance_update') {
-        // Only update if this message is newer than the last one
-        if (data.timestamp && data.timestamp > lastBalanceTimestamp) {
-            lastBalanceTimestamp = data.timestamp;
-            const balanceElement = document.querySelector('.balance-amount');
-            if (balanceElement && data.balance != null) {
-                balanceElement.textContent = `$${data.balance.toFixed(2)}`;
-            }
+        const balanceElement = document.querySelector('.balance-amount');
+        if (balanceElement && data.balance != null) {
+            balanceElement.textContent = `$${data.balance.toFixed(2)}`;
         }
     }
 });

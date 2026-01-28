@@ -1,27 +1,17 @@
 // State management
 let allBets = [];
 let currentFilter = 'all';
-let lastBalanceTimestamp = 0;
 
 // WebSocket message handler
 registerWSMessageHandler((data) => {
-    if (data.opcode === 'betting_closed') {
-        // Update status badge for bets on this game (surgical update)
-        handleBettingClosedDOM(data.game_id);
-    } else if (data.opcode === 'game_result') {
-        // Update bet cards for this game with results (surgical update)
-        handleGameResultDOM(data.game_id, data.result);
-    } else if (data.opcode === 'bet_confirmed') {
-        // Reload to show the new bet
+    // Reload bets when there's a game result or bet confirmed
+    if (data.opcode === 'game_result' || data.opcode === 'bet_confirmed') {
         loadMyBets();
     } else if (data.opcode === 'balance_update') {
-        // Only update if this message is newer than the last one
-        if (data.timestamp && data.timestamp > lastBalanceTimestamp) {
-            lastBalanceTimestamp = data.timestamp;
-            const balanceElement = document.querySelector('.balance-amount');
-            if (balanceElement && data.balance != null) {
-                balanceElement.textContent = `$${data.balance.toFixed(2)}`;
-            }
+        // Update user balance in real-time
+        const balanceElement = document.querySelector('.balance-amount');
+        if (balanceElement && data.balance != null) {
+            balanceElement.textContent = `$${data.balance.toFixed(2)}`;
         }
     }
 });
@@ -109,117 +99,10 @@ function renderBets() {
     });
 }
 
-// Surgical DOM update: Handle betting closed
-function handleBettingClosedDOM(gameId) {
-    // Update all bet cards for this game
-    const betCards = document.querySelectorAll(`.bet-card[data-game-id="${gameId}"]`);
-    
-    betCards.forEach(card => {
-        // Only update if bet is still pending
-        if (card.classList.contains('pending')) {
-            const statusBadge = card.querySelector('.status-badge.pending');
-            if (statusBadge) {
-                statusBadge.textContent = 'Waiting for Result';
-            }
-            
-            // Update bet data in allBets array
-            const betId = parseInt(card.dataset.betId);
-            const bet = allBets.find(b => b.id === betId);
-            if (bet) {
-                bet.betting_open = false;
-            }
-        }
-    });
-}
-
-// Surgical DOM update: Handle game result
-async function handleGameResultDOM(gameId, result) {
-    // Find all bets on this game
-    const betCards = document.querySelectorAll(`.bet-card[data-game-id="${gameId}"]`);
-    
-    if (betCards.length === 0) return;
-    
-    // Fetch updated bet data to get payout information
-    try {
-        const response = await fetchUserBets();
-        const updatedBets = response.bets || [];
-        
-        betCards.forEach(card => {
-            const betId = parseInt(card.dataset.betId);
-            const bet = allBets.find(b => b.id === betId);
-            const updatedBet = updatedBets.find(b => b.id === betId);
-            
-            if (!bet || !updatedBet) return;
-            
-            // Update bet data in allBets array
-            Object.assign(bet, updatedBet);
-            
-            // Determine if won or lost
-            const won = updatedBet.won;
-            
-            // Remove old status class
-            card.classList.remove('pending', 'won', 'lost');
-            
-            // Add new status class
-            if (won === true) {
-                card.classList.add('won');
-            } else if (won === false) {
-                card.classList.add('lost');
-            } else {
-                card.classList.add('pending');
-            }
-            
-            // Update status div
-            const statusDiv = card.querySelector('.bet-status');
-            if (statusDiv) {
-                statusDiv.innerHTML = '';
-                
-                if (won === true) {
-                    const statusBadge = document.createElement('span');
-                    statusBadge.className = 'status-badge won';
-                    statusBadge.textContent = `Won: $${updatedBet.payout.toFixed(2)}`;
-                    statusDiv.appendChild(statusBadge);
-                    
-                    const resultText = updatedBet.game_result === 'opt1' ? updatedBet.opt1_text : updatedBet.opt2_text;
-                    const resultDiv = document.createElement('div');
-                    resultDiv.className = 'result-text';
-                    resultDiv.textContent = `Result: ${resultText}`;
-                    statusDiv.appendChild(resultDiv);
-                } else if (won === false) {
-                    const statusBadge = document.createElement('span');
-                    statusBadge.className = 'status-badge lost';
-                    statusBadge.textContent = 'Lost';
-                    statusDiv.appendChild(statusBadge);
-                    
-                    const resultText = updatedBet.game_result === 'opt1' ? updatedBet.opt1_text : updatedBet.opt2_text;
-                    const resultDiv = document.createElement('div');
-                    resultDiv.className = 'result-text';
-                    resultDiv.textContent = `Result: ${resultText}`;
-                    statusDiv.appendChild(resultDiv);
-                }
-            }
-            
-            // If current filter would exclude this bet, hide it with animation
-            if (currentFilter === 'pending' && won !== null) {
-                card.style.opacity = '0';
-                card.style.transform = 'translateX(-20px)';
-                setTimeout(() => {
-                    card.style.display = 'none';
-                }, 300);
-            }
-        });
-    } catch (error) {
-        console.error('Error fetching updated bet data:', error);
-    }
-}
-
-
 // Create bet card element
 function createBetCard(bet) {
     const card = document.createElement('div');
     card.className = 'bet-card';
-    card.dataset.gameId = bet.game_id; // Add game ID for targeting
-    card.dataset.betId = bet.id; // Add bet ID for targeting
     
     // Add status class
     if (bet.won === true) {

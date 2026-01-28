@@ -1,7 +1,6 @@
 // State management
 let currentFilter = 'all';
 let allGames = [];
-let lastBalanceTimestamp = 0;
 
 // WebSocket message handler
 registerWSMessageHandler((data) => {
@@ -14,13 +13,9 @@ registerWSMessageHandler((data) => {
     } else if (data.opcode === 'game_result') {
         handleGameResultDOM(data.game_id, data.result);
     } else if (data.opcode === 'balance_update') {
-        // Only update if this message is newer than the last one
-        if (data.timestamp && data.timestamp > lastBalanceTimestamp) {
-            lastBalanceTimestamp = data.timestamp;
-            const balanceElement = document.querySelector('.balance-amount');
-            if (balanceElement && data.balance != null) {
-                balanceElement.textContent = `$${data.balance.toFixed(2)}`;
-            }
+        const balanceElement = document.querySelector('.balance-amount');
+        if (balanceElement && data.balance != null) {
+            balanceElement.textContent = `$${data.balance.toFixed(2)}`;
         }
     }
 });

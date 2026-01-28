@@ -8,7 +8,6 @@ let wheelSpinning = false;
 let wheelAnimationId = null;
 let userBalance = 0;
 let pendingBalanceUpdate = null; // Store pending balance update during wheel spin
-let lastBalanceTimestamp = 0;
 
 // WebSocket message handler
 registerWSMessageHandler((data) => {
@@ -32,23 +31,17 @@ registerWSMessageHandler((data) => {
         
         if (isCurrentVirtualGame && wheelSpinning) {
             // Delay balance update until wheel stops spinning
-            pendingBalanceUpdate = data;
+            pendingBalanceUpdate = data.balance;
         } else {
-            // Only update if this message is newer than the last one
-            if (data.timestamp && data.timestamp > lastBalanceTimestamp) {
-                lastBalanceTimestamp = data.timestamp;
-                userBalance = data.balance;
-                updateBalanceDisplay();
-            }
+            // Update balance immediately
+            userBalance = data.balance;
+            updateBalanceDisplay();
         }
     } else if (data.opcode === 'bet_confirmed' && currentGame && data.game_id === currentGame.game_id) {
-        // Add the new bet surgically to My Bets section using data from WebSocket
-        handleBetConfirmedMyBets(data);
+        const choiceText = data.choice === 'opt1' ? currentGame.opt1_text : currentGame.opt2_text;
     } else if (data.opcode === 'betting_closed' && currentGame && data.game_id === currentGame.game_id) {
         currentGame.betting_open = false;
         displayGameDetails();
-        // Update My Bets section surgically
-        handleBettingClosedMyBets();
     } else if (data.opcode === 'game_result' && currentGame && data.game_id === currentGame.game_id) {
         // Store the result data
         const resultData = {
@@ -70,21 +63,17 @@ registerWSMessageHandler((data) => {
                 currentGame.betting_open = false;
                 displayGameDetails();
                 
-                // Update user's bets surgically to show outcome (skip for guests)
+                // Reload user's bets to show outcome (skip for guests)
                 const currentUserData = localStorage.getItem('currentUser');
                 const userData = currentUserData ? JSON.parse(currentUserData) : null;
                 if (userData && !userData.isGuest) {
-                    handleGameResultMyBets(currentGame.game_id, resultData.result);
+                    loadMyBetsForGame(currentGame.game_id);
                 }
                 
                 // Apply pending balance update if there is one
-                if (pendingBalanceUpdate) {
-                    const data = pendingBalanceUpdate;
-                    if (data.timestamp && data.timestamp > lastBalanceTimestamp) {
-                        lastBalanceTimestamp = data.timestamp;
-                        userBalance = data.balance;
-                        updateBalanceDisplay();
-                    }
+                if (pendingBalanceUpdate !== null) {
+                    userBalance = pendingBalanceUpdate;
+                    updateBalanceDisplay();
                     pendingBalanceUpdate = null;
                 } else {
                     // Reload balance if no pending update
@@ -97,130 +86,15 @@ registerWSMessageHandler((data) => {
             currentGame.betting_open = false;
             displayGameDetails();
             
-            // Update user's bets surgically to show outcome (skip for guests)
+            // Reload user's bets to show outcome (skip for guests)
             const currentUserData = localStorage.getItem('currentUser');
             const userData = currentUserData ? JSON.parse(currentUserData) : null;
             if (userData && !userData.isGuest) {
-                handleGameResultMyBets(currentGame.game_id, resultData.result);
+                loadMyBetsForGame(currentGame.game_id);
             }
         }
     }
 });
-
-// Surgical DOM update: Handle bet confirmed (add new bet)
-function handleBetConfirmedMyBets(betData) {
-    const activityList = document.getElementById('activity-list');
-    if (!activityList) return;
-    
-    // Check if this bet already exists in the DOM
-    const existingBet = activityList.querySelector(`[data-bet-id="${betData.bet_id}"]`);
-    if (existingBet) return; // Already displayed
-    
-    // Remove "no activity" message if present
-    const noActivityMsg = activityList.querySelector('.no-activity');
-    if (noActivityMsg) {
-        noActivityMsg.remove();
-    }
-    
-    // Create new bet item
-    const betItem = document.createElement('div');
-    betItem.className = 'activity-item pending';
-    betItem.dataset.betId = betData.bet_id;
-    betItem.style.opacity = '0';
-    betItem.style.transform = 'translateY(-10px)';
-    
-    const choiceText = betData.choice === 'opt1' ? betData.opt1_text : betData.opt2_text;
-    
-    betItem.innerHTML = `
-        <div class="bet-info-row">
-            <div>
-                <div class="bet-choice">${choiceText}</div>
-                <div class="bet-details-small">$${betData.amount.toFixed(2)} at ${betData.odd.toFixed(2)}x odds</div>
-                <div class="bet-timestamp">${formatEuropeanDateTime(betData.placed_at)}</div>
-            </div>
-            <div class="bet-status-col">
-                <span class="status-badge pending">Pending</span>
-                <div class="potential-payout">Potential: $${(betData.amount * betData.odd).toFixed(2)}</div>
-            </div>
-        </div>
-    `;
-    
-    // Insert at the beginning (most recent first)
-    activityList.insertBefore(betItem, activityList.firstChild);
-    
-    // Trigger animation
-    setTimeout(() => {
-        betItem.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-        betItem.style.opacity = '1';
-        betItem.style.transform = 'translateY(0)';
-    }, 10);
-}
-
-// Surgical DOM update: Handle betting closed for My Bets section
-function handleBettingClosedMyBets() {
-    const activityItems = document.querySelectorAll('#activity-list .activity-item.pending');
-    
-    activityItems.forEach(item => {
-        const statusBadge = item.querySelector('.status-badge.pending');
-        if (statusBadge) {
-            statusBadge.textContent = 'Pending';
-        }
-    });
-}
-
-// Surgical DOM update: Handle game result for My Bets section
-async function handleGameResultMyBets(gameId, result) {
-    const activityList = document.getElementById('activity-list');
-    const activityItems = activityList.querySelectorAll('.activity-item.pending');
-    
-    if (activityItems.length === 0) return;
-    
-    // Fetch updated bet data to get payout information
-    try {
-        const response = await fetchUserBets(gameId);
-        const updatedBets = response.bets || [];
-        
-        // Sort by placed_at descending to match original order
-        updatedBets.sort((a, b) => b.placed_at - a.placed_at);
-        
-        // Map each activity item to its corresponding bet
-        const allItems = Array.from(activityList.querySelectorAll('.activity-item'));
-        
-        allItems.forEach((item, index) => {
-            if (updatedBets[index]) {
-                const bet = updatedBets[index];
-                
-                // Only update if bet now has a result
-                if (bet.won !== null) {
-                    // Remove old status class
-                    item.classList.remove('pending', 'won', 'lost');
-                    
-                    // Add new status class
-                    if (bet.won === true) {
-                        item.classList.add('won');
-                    } else {
-                        item.classList.add('lost');
-                    }
-                    
-                    // Update status badge
-                    const statusCol = item.querySelector('.bet-status-col');
-                    if (statusCol) {
-                        let statusHTML = '';
-                        if (bet.won === true) {
-                            statusHTML = `<span class="status-badge won">Won: $${bet.payout.toFixed(2)}</span>`;
-                        } else {
-                            statusHTML = '<span class="status-badge lost">Lost</span>';
-                        }
-                        statusHTML += `<div class="potential-payout">Potential: $${(bet.amount * bet.odd).toFixed(2)}</div>`;
-                        statusCol.innerHTML = statusHTML;
-                    }
-                }
-            }
-        });
-    } catch (error) {
-        console.error('Error fetching updated bet data:', error);
-    }
-}
 
 // Check authentication and load bet
 document.addEventListener('DOMContentLoaded', async () => {
@@ -758,8 +632,12 @@ async function placeBet() {
             displayGameDetails();
         }
         
-        // Note: The bet will be added to My Bets section via WebSocket bet_confirmed message
-        // which triggers handleBetConfirmedMyBets() for surgical DOM update
+        // Reload user's bets for this game (skip for guests - though guests can't bet anyway)
+        const currentUserData = localStorage.getItem('currentUser');
+        const userData = currentUserData ? JSON.parse(currentUserData) : null;
+        if (userData && !userData.isGuest) {
+            loadMyBetsForGame(currentGame.game_id);
+        }
         
         // Reset form
         document.getElementById('bet-amount').value = '';
@@ -805,7 +683,6 @@ async function loadMyBetsForGame(gameId) {
         bets.forEach(bet => {
             const betItem = document.createElement('div');
             betItem.className = 'activity-item';
-            betItem.dataset.betId = bet.id; // Add bet ID for targeting
             
             // Add status class
             if (bet.won === true) {

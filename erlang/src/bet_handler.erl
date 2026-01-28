@@ -51,7 +51,7 @@ handle_bet_placement(Req0, UserId, State) ->
         
         %% Broadcast bet placed event
         spawn(fun() ->
-            broadcast_dispatcher:broadcast({bet_placed, UserId, GId, BetId, Amount, Choice, BetOdd})
+            broadcast_dispatcher:broadcast({bet_placed, UserId, GId, Amount, Choice, BetOdd})
         end),
         
         {ok, reply_json(Req1, 201, #{

@@ -26,8 +26,8 @@
   - [X] Togliere numero participants
   - [X] Togliere console log generali
   - [] Togliere nel websocket message di vincita il totale pagato e i vincitori
-  - [X] Aggiornamento chiusura scommesse sulla my bets, bilancio in bybets e mybets in detailed view
-  - [X] Refreshare solo quello che va refreshato quando arriva il websocket message
+  - [] Aggiornamento chiusura scommesse sulla my bets, bilancio in bybets e mybets in detailed view
+  - [] Refreshare solo quello che va refreshato quando arriva il websocket message
   - [X] Aggiungere POST /balance per aumentare il saldo
   - [X] Display bet amount input only after selecting an option
   - [X] Redirect to login if JWT expired
