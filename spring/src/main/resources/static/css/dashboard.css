@@ -1,5 +1,21 @@
 /* Dashboard */
 
+/* Section Headers */
+.section-header {
+    grid-column: 1 / -1;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    padding: 1rem 0 0.5rem 0;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 1rem;
+    margin-top: 1rem;
+}
+
+.section-header:first-child {
+    margin-top: 0;
+}
+
 /* Filters */
 .filters {
     display: flex;

@@ -18,7 +18,7 @@
     - [x] Protocollo di sicurezza e validazione JWT
 - Generale
   - [X] Utenti non registrati possono vedere cose
-  - [] Separare vecchie scommesse da quelle attive
+  - [X] Separare vecchie scommesse da quelle attive
   - [X] Data di bet da correggere (1970)
   - [X] Togliere alert e sostituire con modal
   - [X] Conto admin da mostrare
@@ -41,7 +41,7 @@ OPZIONALE
 
 Un po' meno opzionale
   - [] capire perché cavolo la post su login ci mette 2 secondi a rispondere
-   
+
 ## API endpoints
 - API login/registrazione/logout (user e admin)
 - JWT validato ma account non in MnesiaDB -> creazione account con 100€ iniziali POST /session {id, timestamp}

@@ -97,12 +97,41 @@ async function loadBets() {
             ? allGames 
             : allGames.filter(game => getCategoryFromGame(game) === currentFilter);
         
+        // Separate active and inactive games
+        const activeGames = filteredGames.filter(game => game.betting_open && !game.result);
+        const inactiveGames = filteredGames.filter(game => !game.betting_open || game.result);
+        
+        // Sort by game_id descending (newest first)
+        activeGames.sort((a, b) => b.game_id - a.game_id);
+        inactiveGames.sort((a, b) => b.game_id - a.game_id);
+        
         grid.innerHTML = '';
         
-        filteredGames.forEach(game => {
-            const card = createBetCard(game);
-            grid.appendChild(card);
-        });
+        // Display active games
+        if (activeGames.length > 0) {
+            const activeHeader = document.createElement('div');
+            activeHeader.className = 'section-header';
+            activeHeader.textContent = 'Active Bets';
+            grid.appendChild(activeHeader);
+            
+            activeGames.forEach(game => {
+                const card = createBetCard(game);
+                grid.appendChild(card);
+            });
+        }
+        
+        // Display inactive games
+        if (inactiveGames.length > 0) {
+            const inactiveHeader = document.createElement('div');
+            inactiveHeader.className = 'section-header';
+            inactiveHeader.textContent = 'Closed Bets';
+            grid.appendChild(inactiveHeader);
+            
+            inactiveGames.forEach(game => {
+                const card = createBetCard(game);
+                grid.appendChild(card);
+            });
+        }
     } catch (error) {
         console.error('Error loading games:', error);
         grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 20px; color: red;">Failed to load games</div>';
