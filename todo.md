@@ -16,9 +16,10 @@
   - [x] API per login/registrazione
     - [x] Token JWT condivisi con Erlang (to see further with erlang implementation)
     - [x] Protocollo di sicurezza e validazione JWT
+- Generale
   - [] Utenti non registrati possono vedere cose
   - [] Separare vecchie scommesse da quelle attive
-  - [] Data di bet da correggere (1970)
+  - [X] Data di bet da correggere (1970)
   - [] Togliere alert
   - [] Conto admin da mostrare
   - [] Aggiornamento volume totale per ogni scommessa
@@ -28,6 +29,7 @@
   - [] Chiusura scommesse sulla my bets
   - [] Refreshare solo quello che va refreshato quando arriva il websocket message
   - [] Aggiungere POST /balance per aumentare il saldo
+  - [] Display bet amount input only after selecting an option
 
 OPZIONALE 
   - [] separare websocket tra bet page e dashboard

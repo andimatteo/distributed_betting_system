@@ -181,7 +181,7 @@ function createBetCard(bet) {
     // Timestamp
     const timestamp = document.createElement('div');
     timestamp.className = 'bet-timestamp';
-    timestamp.textContent = `Placed: ${new Date(bet.placed_at).toLocaleString()}`;
+    timestamp.textContent = `Placed: ${formatEuropeanDateTime(bet.placed_at)}`;
     
     card.appendChild(header);
     card.appendChild(details);

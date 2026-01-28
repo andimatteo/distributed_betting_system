@@ -1,6 +1,18 @@
 // API Configuration
 const API_BASE_URL = '/api';
 
+// Helper function to format timestamp in European format (local timezone)
+function formatEuropeanDateTime(timestampInSeconds) {
+    const date = new Date(timestampInSeconds * 1000); // Convert seconds to milliseconds
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    return `${day}/${month}/${year}, ${hours}:${minutes}:${seconds}`;
+}
+
 // Helper function to get auth headers
 function getAuthHeaders() {
     const token = localStorage.getItem('authToken');

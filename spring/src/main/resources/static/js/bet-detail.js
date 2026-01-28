@@ -666,7 +666,7 @@ async function loadMyBetsForGame(gameId) {
                     <div>
                         <div class="bet-choice">${choiceText}</div>
                         <div class="bet-details-small">$${bet.amount.toFixed(2)} at ${bet.odd.toFixed(2)}x odds</div>
-                        <div class="bet-timestamp">${new Date(bet.placed_at).toLocaleString()}</div>
+                        <div class="bet-timestamp">${formatEuropeanDateTime(bet.placed_at)}</div>
                     </div>
                     <div class="bet-status-col">
                         ${statusHTML}
