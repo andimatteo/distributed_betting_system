@@ -84,19 +84,23 @@ loop() ->
         
         {balance_update, UserId, NewBalance} ->
             %% Send balance update only to the specific user's WebSocket
-            broadcast_to_user(UserId, jsx:encode(#{
-                <<"opcode">> => <<"balance_update">>,
-                <<"user_id">> => UserId,
-                <<"balance">> => NewBalance
-            }));
-        
-        {balance_update, UserId, NewBalance, GameId} ->
-            %% Send balance update with game_id (for game result payouts)
+            Timestamp = erlang:system_time(millisecond),
             broadcast_to_user(UserId, jsx:encode(#{
                 <<"opcode">> => <<"balance_update">>,
                 <<"user_id">> => UserId,
                 <<"balance">> => NewBalance,
-                <<"game_id">> => GameId
+                <<"timestamp">> => Timestamp
+            }));
+        
+        {balance_update, UserId, NewBalance, GameId} ->
+            %% Send balance update with game_id (for game result payouts)
+            Timestamp = erlang:system_time(millisecond),
+            broadcast_to_user(UserId, jsx:encode(#{
+                <<"opcode">> => <<"balance_update">>,
+                <<"user_id">> => UserId,
+                <<"balance">> => NewBalance,
+                <<"game_id">> => GameId,
+                <<"timestamp">> => Timestamp
             }));
         
         {bet_placed, UserId, GameId, Amount, Choice, Odd} ->

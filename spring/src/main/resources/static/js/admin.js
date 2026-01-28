@@ -94,8 +94,7 @@ let allGames = [];
 // WebSocket message handler
 registerWSMessageHandler((data) => {
     // Handle admin-specific updates
-    if (data.opcode === 'new_game' || data.opcode === 'odds_update' || 
-        data.opcode === 'betting_closed' || data.opcode === 'game_result') {
+    if (data.opcode === 'new_game' || data.opcode === 'betting_closed' || data.opcode === 'game_result') {
         loadAdminGames(); // Reload admin table
     }
     
