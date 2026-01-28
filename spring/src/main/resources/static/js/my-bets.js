@@ -24,6 +24,11 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
     
+    // Check if JWT is expired
+    if (!checkAuthExpiration()) {
+        return; // checkAuthExpiration handles redirect
+    }
+    
     const user = JSON.parse(currentUser);
     
     // Guests cannot access My Bets page

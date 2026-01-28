@@ -41,6 +41,11 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
     
+    // Check if JWT is expired
+    if (!checkAuthExpiration()) {
+        return; // checkAuthExpiration handles redirect
+    }
+    
     const user = JSON.parse(currentUser);
     
     // Update navbar for guests

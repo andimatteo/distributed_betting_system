@@ -113,6 +113,11 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
     
+    // Check if JWT is expired
+    if (!checkAuthExpiration()) {
+        return; // checkAuthExpiration handles redirect
+    }
+    
     // Check if user is admin
     const user = JSON.parse(currentUser);
     if (!user.isAdmin) {

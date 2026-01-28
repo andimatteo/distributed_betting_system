@@ -65,6 +65,46 @@ function formatEuropeanDateTime(timestampInSeconds) {
     return `${day}/${month}/${year}, ${hours}:${minutes}:${seconds}`;
 }
 
+// Helper function to check if JWT is expired and redirect to login if needed
+function checkAuthExpiration() {
+    const authExpiry = localStorage.getItem('authExpiry');
+    const currentUser = localStorage.getItem('currentUser');
+    
+    // Allow guests or users without tokens
+    if (!authExpiry || !currentUser) {
+        return true;
+    }
+    
+    // Check if user is guest
+    try {
+        const user = JSON.parse(currentUser);
+        if (user.isGuest) {
+            return true; // Guests don't have expiring tokens
+        }
+    } catch {
+        // Invalid JSON, clear and redirect
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('authExpiry');
+        window.location.href = 'login.html';
+        return false;
+    }
+    
+    const expiryTime = parseInt(authExpiry, 10);
+    const currentTime = Math.floor(Date.now() / 1000); // Current time in seconds
+    
+    if (currentTime >= expiryTime) {
+        // Token expired, clear storage and redirect to login
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('authExpiry');
+        window.location.href = 'login.html';
+        return false;
+    }
+    
+    return true;
+}
+
 // Helper function to get auth headers
 function getAuthHeaders() {
     const token = localStorage.getItem('authToken');

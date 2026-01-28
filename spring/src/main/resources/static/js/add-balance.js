@@ -17,12 +17,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
     
-    const user = JSON.parse(currentUser);
-    
-    // Guests cannot Deposit
-    if (user.isGuest) {
-        window.location.href = 'dashboard.html';
-        return;
+    // Check if JWT is expired
+    if (!checkAuthExpiration()) {
+        return; // checkAuthExpiration handles redirect
     }
     
     // Show admin link if user is admin
