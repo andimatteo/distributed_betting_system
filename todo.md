@@ -32,7 +32,7 @@
   - [X] Display bet amount input only after selecting an option
   - [] Redirect to login if JWT expired
   - [X] Disabilitare meglio le opzioni delle scommesse chiuse
-  - [] CSS pulsanti filtri in mybets
+  - [X] CSS pulsanti filtri in mybets
 
 OPZIONALE 
   - [] separare websocket tra bet page e dashboard
