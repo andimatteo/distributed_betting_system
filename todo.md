@@ -21,7 +21,7 @@
   - [] Separare vecchie scommesse da quelle attive
   - [X] Data di bet da correggere (1970)
   - [X] Togliere alert e sostituire con modal
-  - [] Conto admin da mostrare
+  - [X] Conto admin da mostrare
   - [] Aggiornamento volume totale per ogni scommessa
   - [X] Togliere numero participants
   - [] Togliere console log generali

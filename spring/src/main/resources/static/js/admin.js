@@ -1,3 +1,93 @@
+// Admin API Functions
+async function createGameAPI(questionText, opt1Text, opt2Text, category) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/admin/game`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({
+                question_text: questionText,
+                opt1_text: opt1Text,
+                opt2_text: opt2Text,
+                category: category
+            })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to create game');
+        }
+        
+        return await response.json();
+    } catch (error) {
+        console.error('Error creating game:', error);
+        throw error;
+    }
+}
+
+async function stopBettingAPI(gameId) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/admin/stop_betting`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({
+                game_id: gameId
+            })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to stop betting');
+        }
+        
+        return await response.json();
+    } catch (error) {
+        console.error('Error stopping betting:', error);
+        throw error;
+    }
+}
+
+async function setGameResultAPI(gameId, result) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/admin/start_game`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({
+                game_id: gameId,
+                result: result
+            })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to set game result');
+        }
+        
+        return await response.json();
+    } catch (error) {
+        console.error('Error setting game result:', error);
+        throw error;
+    }
+}
+
+async function getProfitAPI() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/admin/profit`, {
+            method: 'GET',
+            headers: getAuthHeaders()
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to get profit');
+        }
+        
+        return await response.json();
+    } catch (error) {
+        console.error('Error getting profit:', error);
+        throw error;
+    }
+}
+
 // State management
 let allGames = [];
 
