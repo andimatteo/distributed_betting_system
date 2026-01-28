@@ -30,7 +30,8 @@ init(_) ->
             %% Admin endpoints
             {"/api/admin/game", admin_game_handler, []},
             {"/api/admin/start_game", admin_start_game_handler, []},
-            {"/api/admin/stop_betting", admin_stop_betting_handler, []}
+            {"/api/admin/stop_betting", admin_stop_betting_handler, []},
+            {"/api/admin/profit", admin_profit_handler, []}
         ]}
     ]),
     

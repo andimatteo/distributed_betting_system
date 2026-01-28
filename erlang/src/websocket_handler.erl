@@ -13,7 +13,7 @@ websocket_init(_State) ->
     %% Register as anonymous WebSocket connection
     global:register_name({ws, node(), self()}, self()),
     io:format("WebSocket connection registered: ~p~n", [self()]),
-    {[], #{user_id => undefined}}.
+    {[], #{user_id => undefined, is_admin => false}}.
 
 websocket_handle({text, Msg}, State) ->
     try jsx:decode(Msg, [return_maps]) of
@@ -26,15 +26,20 @@ websocket_handle({text, Msg}, State) ->
                     %% Client sends JWT to authenticate and receive personal updates
                     Token = maps:get(<<"token">>, Json, <<>>),
                     case authenticate_user(Token) of
-                        {ok, UserId} ->
+                        {ok, UserId, IsAdmin} ->
                             %% Unregister anonymous, register with user ID
                             global:unregister_name({ws, node(), self()}),
-                            global:register_name({ws_user, node(), UserId, self()}, self()),
+                            RegisterName = case IsAdmin of
+                                true -> {ws_admin, node(), UserId, self()};
+                                false -> {ws_user, node(), UserId, self()}
+                            end,
+                            global:register_name(RegisterName, self()),
                             Reply = jsx:encode(#{
                                 <<"opcode">> => <<"authenticated">>,
-                                <<"user_id">> => UserId
+                                <<"user_id">> => UserId,
+                                <<"is_admin">> => IsAdmin
                             }),
-                            {[{text, Reply}], State#{user_id => UserId}};
+                            {[{text, Reply}], State#{user_id => UserId, is_admin => IsAdmin}};
                         {error, Reason} ->
                             Reply = jsx:encode(#{
                                 <<"opcode">> => <<"error">>,
@@ -72,7 +77,11 @@ websocket_terminate(_Reason, _Req, State) ->
         undefined ->
             global:unregister_name({ws, node(), self()});
         UserId ->
-            global:unregister_name({ws_user, node(), UserId, self()})
+            IsAdmin = maps:get(is_admin, State, false),
+            case IsAdmin of
+                true -> global:unregister_name({ws_admin, node(), UserId, self()});
+                false -> global:unregister_name({ws_user, node(), UserId, self()})
+            end
     end,
     ok.
 
@@ -82,9 +91,10 @@ authenticate_user(Token) ->
     case jwt_validator:validate(Token, Secret) of
         {ok, Claims} ->
             UserId = maps:get(<<"id">>, Claims, undefined),
+            IsAdmin = maps:get(<<"isAdmin">>, Claims, false),
             case UserId of
                 undefined -> {error, invalid_claims};
-                _ -> {ok, UserId}
+                _ -> {ok, UserId, IsAdmin}
             end;
         {error, Reason} ->
             {error, Reason}

@@ -282,6 +282,31 @@ async function setGameResultAPI(gameId, result) {
     }
 }
 
+// Get bookmaker profit (admin only)
+async function getProfitAPI() {
+    try {
+        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        
+        const response = await fetch(`${API_BASE_URL}/admin/profit`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${currentUser.token}`
+            }
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to get profit');
+        }
+        
+        return await response.json();
+    } catch (error) {
+        console.error('Error getting profit:', error);
+        throw error;
+    }
+}
+
 // Logout function (shared across pages)
 function logout() {
     localStorage.removeItem('currentUser');

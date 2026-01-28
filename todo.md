@@ -26,12 +26,13 @@
   - [X] Togliere numero participants
   - [] Togliere console log generali
   - [] Togliere nel websocket message di vincita il totale pagato e i vincitori
-  - [] Chiusura scommesse sulla my bets
+  - [] Aggiornamento chiusura scommesse sulla my bets, bilancio in bybets e mybets in detailed view
   - [] Refreshare solo quello che va refreshato quando arriva il websocket message
   - [X] Aggiungere POST /balance per aumentare il saldo
   - [X] Display bet amount input only after selecting an option
   - [] Redirect to login if JWT expired
   - [X] Disabilitare meglio le opzioni delle scommesse chiuse
+  - [] CSS pulsanti filtri in mybets
 
 OPZIONALE 
   - [] separare websocket tra bet page e dashboard

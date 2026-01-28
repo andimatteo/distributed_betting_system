@@ -71,7 +71,12 @@ finish_game(GameId, Result) ->
                 end,
 
                 %% Update bookmaker balance: profit = total_pool - total_paid
-                update_bookmaker_balance(TotalPool - TotalPaid),
+                BookmakerProfit = update_bookmaker_balance(TotalPool - TotalPaid),
+                
+                %% Broadcast profit update to all admins
+                spawn(fun() ->
+                    broadcast_dispatcher:broadcast_admin({profit_update, BookmakerProfit})
+                end),
 
                 {WinnersCount, TotalPaid, BalanceUpdates};
             [] ->
@@ -122,11 +127,14 @@ update_bookmaker_balance(Amount) ->
     case mnesia:read(account, BookmakerId) of
         [Account = #account{balance = Balance}] ->
             NewBalance = Balance + Amount,
-            mnesia:write(Account#account{balance = NewBalance});
+            mnesia:write(Account#account{balance = NewBalance}),
+            NewBalance;
         [] ->
             %% Should not happen if initialized properly
             BookmakerMoney = application:get_env(betting_node, bookmaker_money, 10000),
-            mnesia:write(#account{user_id = BookmakerId, balance = BookmakerMoney + Amount})
+            NewBalance = BookmakerMoney + Amount,
+            mnesia:write(#account{user_id = BookmakerId, balance = NewBalance}),
+            NewBalance
     end.
 
 refund_all_bets(GameId) ->

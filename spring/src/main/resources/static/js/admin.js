@@ -8,6 +8,11 @@ registerWSMessageHandler((data) => {
         data.opcode === 'betting_closed' || data.opcode === 'game_result') {
         loadAdminGames(); // Reload admin table
     }
+    
+    // Handle profit updates
+    if (data.opcode === 'profit_update') {
+        updateProfitDisplay(data.profit);
+    }
 });
 
 // Check authentication and admin status
@@ -30,6 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
     connectWebSocket();
     
     loadAdminGames();
+    loadProfit();
     
     // Add category change listener
     const categorySelect = document.getElementById('bet-category');
@@ -50,6 +56,33 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+// Load and display profit
+async function loadProfit() {
+    try {
+        const data = await getProfitAPI();
+        updateProfitDisplay(data.profit);
+    } catch (error) {
+        console.error('Error loading profit:', error);
+        updateProfitDisplay(0);
+    }
+}
+
+// Update profit display
+function updateProfitDisplay(profit) {
+    const profitElement = document.getElementById('profit-amount');
+    if (profitElement) {
+        profitElement.textContent = `€${profit.toFixed(2)}`;
+        // Color based on profit/loss
+        if (profit > 0) {
+            profitElement.style.color = 'var(--success)';
+        } else if (profit < 0) {
+            profitElement.style.color = 'var(--danger)';
+        } else {
+            profitElement.style.color = 'var(--primary)';
+        }
+    }
+}
 
 // Load games in admin table
 async function loadAdminGames() {
