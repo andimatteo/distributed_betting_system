@@ -215,9 +215,7 @@ function displayGameDetails() {
     document.getElementById('detail-category').textContent = category;
     document.getElementById('detail-category').className = `bet-category ${category}`;
     document.getElementById('detail-title').textContent = currentGame.question_text;
-    
-    const totalVolume = (currentGame.tot_opt1 || 0) + (currentGame.tot_opt2 || 0);
-    document.getElementById('detail-volume').textContent = `$${totalVolume.toFixed(2)}`;
+    document.getElementById('detail-volume').textContent = `$${currentGame.total_volume.toFixed(2)}`;
     
     // Load outcome buttons
     const outcomesContainer = document.getElementById('outcome-options');
