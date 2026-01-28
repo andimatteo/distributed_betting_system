@@ -266,27 +266,38 @@ function displayGameDetails() {
     // Show/hide bet form based on betting status
     const betFormGroup = document.querySelector('.bet-form .form-group');
     const potentialReturnDiv = document.querySelector('.bet-form .potential-return');
+    const placeBetBtn = document.querySelector('button[onclick="placeBet()"]');
     const isClosed = !currentGame.betting_open || currentGame.result;
     
-    if (betFormGroup) {
-        betFormGroup.style.display = isClosed ? 'none' : 'block';
-    }
-    if (potentialReturnDiv) {
-        potentialReturnDiv.style.display = isClosed ? 'none' : 'flex';
-    }
-    
-    // Disable betting if closed or has result
     if (isClosed) {
-        const placeBetBtn = document.querySelector('button[onclick="placeBet()"]');
+        // Hide bet form when closed
+        if (betFormGroup) betFormGroup.style.display = 'none';
+        if (potentialReturnDiv) potentialReturnDiv.style.display = 'none';
         if (placeBetBtn) {
             placeBetBtn.disabled = true;
             placeBetBtn.textContent = currentGame.result ? 'Game Finished' : 'Betting Closed';
+            placeBetBtn.style.display = 'block';
         }
     } else {
-        const placeBetBtn = document.querySelector('button[onclick="placeBet()"]');
-        if (placeBetBtn) {
-            placeBetBtn.disabled = false;
-            placeBetBtn.textContent = 'Place Bet';
+        // For open bets, show/hide based on option selection
+        if (!selectedOutcome) {
+            // Hide amount input and potential return when no option selected
+            if (betFormGroup) betFormGroup.style.display = 'none';
+            if (potentialReturnDiv) potentialReturnDiv.style.display = 'none';
+            if (placeBetBtn) {
+                placeBetBtn.disabled = true;
+                placeBetBtn.textContent = 'Place Bet';
+                placeBetBtn.style.display = 'none';
+            }
+        } else {
+            // Show everything when option is selected
+            if (betFormGroup) betFormGroup.style.display = 'block';
+            if (potentialReturnDiv) potentialReturnDiv.style.display = 'flex';
+            if (placeBetBtn) {
+                placeBetBtn.disabled = false;
+                placeBetBtn.textContent = 'Place Bet';
+                placeBetBtn.style.display = 'block';
+            }
         }
     }
     
@@ -316,14 +327,6 @@ function displayGameDetails() {
 
 // Select outcome
 function selectOutcome(choice) {
-    // Check if user is a guest
-    const currentUserData = localStorage.getItem('currentUser');
-    const userData = currentUserData ? JSON.parse(currentUserData) : null;
-    if (userData && userData.isGuest) {
-        showErrorModal('Please login or register to place bets');
-        return;
-    }
-    
     if (!currentGame.betting_open || currentGame.result) {
         showErrorModal('Betting is closed for this game');
         return;
@@ -339,6 +342,18 @@ function selectOutcome(choice) {
             btn.classList.remove('selected');
         }
     });
+    
+    // Show amount input, potential return, and bet button now that an option is selected
+    const betFormGroup = document.querySelector('.bet-form .form-group');
+    const potentialReturnDiv = document.querySelector('.bet-form .potential-return');
+    const placeBetBtn = document.querySelector('button[onclick="placeBet()"]');
+    
+    if (betFormGroup) betFormGroup.style.display = 'block';
+    if (potentialReturnDiv) potentialReturnDiv.style.display = 'flex';
+    if (placeBetBtn) {
+        placeBetBtn.disabled = false;
+        placeBetBtn.style.display = 'block';
+    }
     
     // Update potential return
     updatePotentialReturn();
@@ -655,6 +670,16 @@ async function placeBet() {
         document.querySelectorAll('.outcome-btn').forEach(btn => {
             btn.classList.remove('selected');
         });
+        
+        // Hide inputs until next selection
+        const betFormGroup = document.querySelector('.bet-form .form-group');
+        const potentialReturnDiv = document.querySelector('.bet-form .potential-return');
+        const placeBetBtn = document.querySelector('button[onclick="placeBet()"]');
+        
+        if (betFormGroup) betFormGroup.style.display = 'none';
+        if (potentialReturnDiv) potentialReturnDiv.style.display = 'none';
+        if (placeBetBtn) placeBetBtn.style.display = 'none';
+        
         updatePotentialReturn();
         
     } catch (error) {

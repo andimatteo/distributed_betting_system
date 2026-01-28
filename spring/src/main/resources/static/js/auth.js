@@ -42,7 +42,7 @@ function handleLogin(event) {
             localStorage.setItem('authExpiry', String(data.expiryTimeEpochSeconds));
             window.location.href = 'dashboard.html';
         })
-        .catch((err) => alert(err.message));
+        .catch((err) => showErrorModal(err.message));
 }
 
 // Handle registration
