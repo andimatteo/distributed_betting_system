@@ -188,6 +188,29 @@ async function fetchUserBets(gameId = null) {
     }
 }
 
+// Deposit to user account
+async function addBalanceAPI(amount) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/balance`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ amount: amount })
+        });
+        
+        if (!response.ok) {
+            const erlangNode = response.headers.get('x-erlang-node');
+            console.error(`addBalance failed [${response.status}] from node: ${erlangNode || 'unknown'}`);
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.error || 'Failed to Deposit');
+        }
+        
+        return await response.json();
+    } catch (error) {
+        console.error('Error adding balance:', error);
+        throw error;
+    }
+}
+
 // Admin API Functions
 async function createGameAPI(questionText, opt1Text, opt2Text, category) {
     try {

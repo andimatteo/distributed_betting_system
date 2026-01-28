@@ -44,8 +44,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Update navbar for guests
     if (user.isGuest) {
-        // Show Login/Register, hide My Bets and Logout
+        // Show Login/Register, hide My Bets, Deposit, and Logout
         document.getElementById('my-bets-link').style.display = 'none';
+        document.getElementById('add-balance-link').style.display = 'none';
         document.getElementById('logout-link').style.display = 'none';
         document.getElementById('login-link').style.display = 'inline';
         
