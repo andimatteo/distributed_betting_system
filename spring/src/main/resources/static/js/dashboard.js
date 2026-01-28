@@ -4,15 +4,15 @@ let allGames = [];
 
 // WebSocket message handler
 registerWSMessageHandler((data) => {
-    // Handle odds updates, new games, etc.
     if (data.opcode === 'odds_update') {
-        updateGameOdds(data.game_id, data.odd1, data.odd2, data.cap_opt1, data.cap_opt2, data.total_volume);
+        updateGameOddsDOM(data.game_id, data.odd1, data.odd2, data.cap_opt1, data.cap_opt2, data.total_volume);
     } else if (data.opcode === 'new_game') {
-        loadBets(); // Reload all games when a new one is created
-    } else if (data.opcode === 'betting_closed' || data.opcode === 'game_result') {
-        loadBets(); // Reload to show updated status
+        addNewGameDOM(data);
+    } else if (data.opcode === 'betting_closed') {
+        handleBettingClosedDOM(data.game_id);
+    } else if (data.opcode === 'game_result') {
+        handleGameResultDOM(data.game_id, data.result);
     } else if (data.opcode === 'balance_update') {
-        // Update user balance in real-time
         const balanceElement = document.querySelector('.balance-amount');
         if (balanceElement && data.balance != null) {
             balanceElement.textContent = `$${data.balance.toFixed(2)}`;
@@ -20,8 +20,9 @@ registerWSMessageHandler((data) => {
     }
 });
 
-// Update odds for a specific game in real-time
-function updateGameOdds(gameId, odd1, odd2, capOpt1, capOpt2, totalVolume) {
+// Update odds directly in the DOM
+function updateGameOddsDOM(gameId, odd1, odd2, capOpt1, capOpt2, totalVolume) {
+    // Update in-memory state
     const game = allGames.find(g => g.game_id === gameId);
     if (game) {
         game.odd1 = odd1;
@@ -29,8 +30,155 @@ function updateGameOdds(gameId, odd1, odd2, capOpt1, capOpt2, totalVolume) {
         game.cap_opt1 = capOpt1;
         game.cap_opt2 = capOpt2;
         game.total_volume = totalVolume;
-        loadBets(); // Refresh the display
     }
+    
+    // Update DOM
+    const card = document.getElementById(`game-card-${gameId}`);
+    if (!card) return;
+    
+    // Update odds
+    const odds1Elem = card.querySelector('.outcome-odds-1');
+    const odds2Elem = card.querySelector('.outcome-odds-2');
+    if (odds1Elem) odds1Elem.textContent = `${odd1.toFixed(2)}x`;
+    if (odds2Elem) odds2Elem.textContent = `${odd2.toFixed(2)}x`;
+    
+    // Update volume
+    const volumeElem = card.querySelector('.bet-volume');
+    if (volumeElem) volumeElem.textContent = `Volume: $${totalVolume.toFixed(2)}`;
+}
+
+// Add new game to DOM
+function addNewGameDOM(gameData) {
+    const game = {
+        game_id: gameData.game_id,
+        question_text: gameData.question_text,
+        opt1_text: gameData.opt1_text,
+        opt2_text: gameData.opt2_text,
+        category: gameData.category,
+        betting_open: gameData.betting_open,
+        odd1: gameData.odd1,
+        odd2: gameData.odd2,
+        cap_opt1: gameData.cap_opt1,
+        cap_opt2: gameData.cap_opt2,
+        tot_opt1: 0,
+        tot_opt2: 0,
+        result: null
+    };
+    
+    // Add to state
+    allGames.push(game);
+    
+    // Check if game matches current filter
+    const category = getCategoryFromGame(game);
+    if (currentFilter !== 'all' && category !== currentFilter) {
+        return; // Don't display if filtered out
+    }
+    
+    // Create card
+    const card = createBetCard(game);
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(-20px)';
+    
+    // Find or create active section
+    const grid = document.getElementById('bets-grid');
+    let activeHeader = grid.querySelector('.section-header.active-header');
+    
+    if (!activeHeader) {
+        activeHeader = document.createElement('div');
+        activeHeader.className = 'section-header active-header';
+        activeHeader.textContent = 'Active Bets';
+        grid.insertBefore(activeHeader, grid.firstChild);
+    }
+    
+    // Insert after active header (at the beginning of active games)
+    const nextElement = activeHeader.nextElementSibling;
+    if (nextElement && nextElement.classList.contains('bet-card')) {
+        grid.insertBefore(card, nextElement);
+    } else {
+        grid.insertBefore(card, nextElement);
+    }
+    
+    // Animate in
+    setTimeout(() => {
+        card.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+        card.style.opacity = '1';
+        card.style.transform = 'translateY(0)';
+    }, 10);
+}
+
+// Handle betting closed
+function handleBettingClosedDOM(gameId) {
+    // Update state
+    const game = allGames.find(g => g.game_id === gameId);
+    if (game) {
+        game.betting_open = false;
+    }
+    
+    // Move card from active to closed section
+    moveCardToClosed(gameId, 'Betting Closed', '#ff9800');
+}
+
+// Handle game result
+function handleGameResultDOM(gameId, result) {
+    // Update state
+    const game = allGames.find(g => g.game_id === gameId);
+    if (game) {
+        game.result = result;
+        game.betting_open = false;
+    }
+    
+    // Move card and update result
+    const resultText = game ? `Result: ${result === 'opt1' ? game.opt1_text : game.opt2_text}` : `Result: ${result}`;
+    moveCardToClosed(gameId, resultText, '#4CAF50', true);
+}
+
+// Move card from active to closed section
+function moveCardToClosed(gameId, statusText, statusColor, isResult = false) {
+    const card = document.getElementById(`game-card-${gameId}`);
+    if (!card) return;
+    
+    const grid = document.getElementById('bets-grid');
+    
+    // Update status
+    const statusElem = card.querySelector('.bet-status');
+    if (statusElem) {
+        statusElem.textContent = statusText;
+        statusElem.style.color = statusColor;
+        if (isResult) {
+            statusElem.style.fontWeight = 'bold';
+        }
+    }
+    
+    // Find or create closed section
+    let closedHeader = grid.querySelector('.section-header.closed-header');
+    
+    if (!closedHeader) {
+        closedHeader = document.createElement('div');
+        closedHeader.className = 'section-header closed-header';
+        closedHeader.textContent = 'Closed Bets';
+        grid.appendChild(closedHeader);
+    }
+    
+    // Animate out and move
+    card.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+    card.style.opacity = '0';
+    card.style.transform = 'translateX(-20px)';
+    
+    setTimeout(() => {
+        // Move to closed section (insert after header)
+        const nextElement = closedHeader.nextElementSibling;
+        if (nextElement && nextElement.classList.contains('bet-card')) {
+            grid.insertBefore(card, nextElement);
+        } else {
+            grid.appendChild(card);
+        }
+        
+        // Animate in
+        setTimeout(() => {
+            card.style.opacity = '1';
+            card.style.transform = 'translateX(0)';
+        }, 10);
+    }, 300);
 }
 
 // Check authentication
@@ -110,7 +258,7 @@ async function loadBets() {
         // Display active games
         if (activeGames.length > 0) {
             const activeHeader = document.createElement('div');
-            activeHeader.className = 'section-header';
+            activeHeader.className = 'section-header active-header';
             activeHeader.textContent = 'Active Bets';
             grid.appendChild(activeHeader);
             
@@ -123,7 +271,7 @@ async function loadBets() {
         // Display inactive games
         if (inactiveGames.length > 0) {
             const inactiveHeader = document.createElement('div');
-            inactiveHeader.className = 'section-header';
+            inactiveHeader.className = 'section-header closed-header';
             inactiveHeader.textContent = 'Closed Bets';
             grid.appendChild(inactiveHeader);
             
@@ -147,6 +295,7 @@ function getCategoryFromGame(game) {
 function createBetCard(game) {
     const card = document.createElement('div');
     card.className = 'bet-card';
+    card.id = `game-card-${game.game_id}`;
     card.onclick = () => viewBetDetail(game.game_id);
     
     // Create card header
@@ -177,7 +326,7 @@ function createBetCard(game) {
     label1.textContent = game.opt1_text;
     
     const odds1 = document.createElement('span');
-    odds1.className = 'outcome-odds';
+    odds1.className = 'outcome-odds outcome-odds-1';
     odds1.textContent = game.odd1 != null ? `${game.odd1.toFixed(2)}x` : 'N/A';
     
     outcome1Div.appendChild(label1);
@@ -193,7 +342,7 @@ function createBetCard(game) {
     label2.textContent = game.opt2_text;
     
     const odds2 = document.createElement('span');
-    odds2.className = 'outcome-odds';
+    odds2.className = 'outcome-odds outcome-odds-2';
     odds2.textContent = game.odd2 != null ? `${game.odd2.toFixed(2)}x` : 'N/A';
     
     outcome2Div.appendChild(label2);
@@ -205,10 +354,12 @@ function createBetCard(game) {
     info.className = 'bet-info';
     
     const volume = document.createElement('span');
-    const totalVolume = (game.tot_opt1 || 0) + (game.tot_opt2 || 0);
+    volume.className = 'bet-volume';
+    const totalVolume = game.total_volume ?? ((game.tot_opt1 || 0) + (game.tot_opt2 || 0));
     volume.textContent = `Volume: $${totalVolume.toFixed(2)}`;
     
     const status = document.createElement('span');
+    status.className = 'bet-status';
     if (game.result) {
         status.textContent = `Result: ${game.result === 'opt1' ? game.opt1_text : game.opt2_text}`;
         status.style.fontWeight = 'bold';

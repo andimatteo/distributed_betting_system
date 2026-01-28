@@ -65,7 +65,7 @@ async function addBalanceAPI(amount) {
             const erlangNode = response.headers.get('x-erlang-node');
             console.error(`addBalance failed [${response.status}] from node: ${erlangNode || 'unknown'}`);
             const error = await response.json().catch(() => ({}));
-            throw new Error(error.error || 'Failed to Deposit');
+            throw new Error(error.error || ' Retry later.');
         }
         
         return await response.json();
