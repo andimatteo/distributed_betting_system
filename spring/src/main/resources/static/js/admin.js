@@ -166,7 +166,7 @@ async function loadProfit() {
 function updateProfitDisplay(profit) {
     const profitElement = document.getElementById('profit-amount');
     if (profitElement) {
-        profitElement.textContent = `€${profit.toFixed(2)}`;
+        profitElement.textContent = `$${profit.toFixed(2)}`;
         // Color based on profit/loss
         if (profit > 0) {
             profitElement.style.color = 'var(--success)';
