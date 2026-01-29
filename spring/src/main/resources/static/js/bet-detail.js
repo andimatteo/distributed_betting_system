@@ -1,6 +1,7 @@
 // State management
 let currentGame = null;
 let selectedOutcome = null;
+let frozenExpectedOdd = null; // Frozen odds at the time of option selection
 let wheelCanvas = null;
 let wheelCtx = null;
 let wheelAngle = 0;
@@ -20,6 +21,23 @@ registerWSMessageHandler((data) => {
         currentGame.cap_opt1 = data.cap_opt1;
         currentGame.cap_opt2 = data.cap_opt2;
         currentGame.total_volume = data.total_volume;
+        
+        // Deselect option since odds have changed
+        if (selectedOutcome) {
+            selectedOutcome = null;
+            frozenExpectedOdd = null;
+            document.querySelectorAll('.outcome-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            
+            // Hide bet form inputs
+            // const betFormGroup = document.querySelector('.bet-form .form-group');
+            // const potentialReturnDiv = document.querySelector('.bet-form .potential-return');
+            // const placeBetBtn = document.querySelector('button[onclick="placeBet()"]');
+            // if (betFormGroup) betFormGroup.style.display = 'none';
+            // if (potentialReturnDiv) potentialReturnDiv.style.display = 'none';
+            // if (placeBetBtn) placeBetBtn.style.display = 'none';
+        }
         
         // Refresh the display
         displayGameDetails();
@@ -353,6 +371,9 @@ function selectOutcome(choice) {
     
     selectedOutcome = choice;
     
+    // Freeze the expected odds at the moment of selection
+    frozenExpectedOdd = choice === 'opt1' ? currentGame.odd1 : currentGame.odd2;
+    
     // Update button states
     document.querySelectorAll('.outcome-btn').forEach((btn, i) => {
         if ((i === 0 && choice === 'opt1') || (i === 1 && choice === 'opt2')) {
@@ -626,8 +647,8 @@ async function placeBet() {
     }
     
     try {
-        // Get expected odds for the selected outcome
-        const expectedOdd = selectedOutcome === 'opt1' ? currentGame.odd1 : currentGame.odd2;
+        // Use frozen odds from when the option was selected
+        const expectedOdd = frozenExpectedOdd;
         
         const result = await submitBetAPI(currentGame.game_id, amount, selectedOutcome, expectedOdd);
         
@@ -650,6 +671,7 @@ async function placeBet() {
         // Reset form
         document.getElementById('bet-amount').value = '';
         selectedOutcome = null;
+        frozenExpectedOdd = null;
         document.querySelectorAll('.outcome-btn').forEach(btn => {
             btn.classList.remove('selected');
         });
