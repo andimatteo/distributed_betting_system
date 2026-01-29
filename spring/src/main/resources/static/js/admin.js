@@ -94,8 +94,7 @@ let allGames = [];
 // WebSocket message handler
 registerWSMessageHandler((data) => {
     // Handle admin-specific updates
-    if (data.opcode === 'new_game' || data.opcode === 'odds_update' || 
-        data.opcode === 'betting_closed' || data.opcode === 'game_result') {
+    if (data.opcode === 'new_game' || data.opcode === 'betting_closed' || data.opcode === 'game_result') {
         loadAdminGames(); // Reload admin table
     }
     
@@ -301,9 +300,6 @@ async function createBet(event) {
         const opt2Input = document.getElementById('bet-option2');
         opt1Input.disabled = false;
         opt2Input.disabled = false;
-
-        // Reload table
-        loadAdminGames();
     } catch (error) {
         showErrorModal(`Failed to create game: ${error.message}`);
     }
@@ -317,7 +313,6 @@ async function stopBettingForGame(gameId) {
     if (confirm(`Stop betting on "${game.question_text}"?`)) {
         try {
             await stopBettingAPI(gameId);
-            loadAdminGames();
         } catch (error) {
             showErrorModal(`Failed to stop betting: ${error.message}`);
         }
@@ -373,7 +368,6 @@ async function setResult(gameId, result, resultText) {
             const response = await setGameResultAPI(gameId, result);
             
             closeResultModal();
-            loadAdminGames();
         } catch (error) {
             showErrorModal(`Failed to set result: ${error.message}`);
         }
