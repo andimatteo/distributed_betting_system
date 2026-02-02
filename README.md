@@ -24,7 +24,7 @@ To achieve this, the platform leverages:
 
 The system is composed of three main subsystems: a load balancing layer, an authentication/frontend service, and a distributed game service cluster.
 
-![System Architecture](figures/architecture.pdf)
+![System Architecture](figures/architecture.jpg)
 
 ### Components
 
